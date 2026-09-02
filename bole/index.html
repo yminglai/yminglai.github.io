@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bole 伯乐 — a research-taste arena</title>
+<meta name="description" content="Bole measures whether an LLM can judge which research approach will win — before the results exist. Judges predict; reality resolves.">
+<meta property="og:title" content="Bole 伯乐 — a research-taste arena">
+<meta property="og:description" content="Can an LLM judge which research will work, before the results exist? Blinded ex-ante pairs, resolved by reality, scored by gap-stratified accuracy, calibration, and selection regret — not raw win rate.">
+<style>
+  :root {
+    --bg: #FDFCFA;
+    --ink: #1C1A17;
+    --ink-2: #57534C;
+    --ink-3: #8A857C;
+    --accent: #A93226;          /* seal red */
+    --hairline: #E6E2DB;
+    --tile-bg: #F7F5F1;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14120F;
+      --ink: #EAE6DF;
+      --ink-2: #A9A399;
+      --ink-3: #736D63;
+      --accent: #E07B5F;
+      --hairline: #2A2721;
+      --tile-bg: #1C1915;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .col { max-width: 660px; margin: 0 auto; padding: 0 24px; }
+  header { padding: 88px 0 0; }
+  .seal {
+    width: 54px; height: 54px; border-radius: 6px;
+    background: var(--accent);
+    color: #FDFCFA;
+    display: flex; align-items: center; justify-content: center;
+    font-family: "Songti SC", "Noto Serif SC", "SimSun", serif;
+    font-size: 22px; font-weight: 700; letter-spacing: 2px;
+    line-height: 1.1; writing-mode: vertical-rl; text-orientation: upright;
+    user-select: none;
+  }
+  h1 { font-size: 44px; letter-spacing: -0.5px; margin-top: 20px; line-height: 1.1; }
+  h1 .zh { font-family: "Songti SC", "Noto Serif SC", "SimSun", serif; font-weight: 600; }
+  .tagline { margin-top: 10px; font-size: 18px; color: var(--ink-2); }
+  .tagline b { color: var(--ink); font-weight: 600; }
+
+  .epigraph {
+    margin: 56px 0 0; padding-left: 20px;
+    border-left: 2px solid var(--accent);
+    font-family: Georgia, "Songti SC", "Noto Serif SC", serif;
+  }
+  .epigraph .zh { font-size: 19px; }
+  .epigraph .en { margin-top: 8px; font-size: 15.5px; font-style: italic; color: var(--ink-2); }
+  .epigraph .src { margin-top: 8px; font-size: 13.5px; color: var(--ink-3); font-style: normal; }
+
+  section { margin-top: 72px; }
+  h2 {
+    font-size: 13px; font-weight: 600; letter-spacing: 1.6px;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 18px;
+  }
+  p + p { margin-top: 14px; }
+  .muted { color: var(--ink-2); }
+
+  ol.steps { list-style: none; counter-reset: s; }
+  ol.steps li {
+    counter-increment: s; padding: 18px 0 18px 52px; position: relative;
+    border-top: 1px solid var(--hairline);
+  }
+  ol.steps li:last-child { border-bottom: 1px solid var(--hairline); }
+  ol.steps li::before {
+    content: counter(s);
+    position: absolute; left: 0; top: 20px;
+    width: 30px; height: 30px; border-radius: 50%;
+    border: 1.5px solid var(--accent); color: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 600;
+  }
+  ol.steps b { font-weight: 600; }
+  ol.steps .zh-note { color: var(--ink-3); font-size: 14px; }
+
+  .tiles {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
+  }
+  @media (min-width: 560px) { .tiles { grid-template-columns: repeat(4, 1fr); } }
+  .tile { background: var(--tile-bg); border-radius: 10px; padding: 18px 16px 16px; }
+  .tile .n {
+    font-size: 30px; font-weight: 650; letter-spacing: -0.5px;
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+  .tile .l { margin-top: 6px; font-size: 13px; line-height: 1.45; color: var(--ink-2); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  th {
+    text-align: left; font-size: 12px; letter-spacing: 1px; text-transform: uppercase;
+    color: var(--ink-3); font-weight: 600; padding: 0 12px 10px 0;
+  }
+  td { padding: 11px 12px 11px 0; border-top: 1px solid var(--hairline); }
+  td.num { font-variant-numeric: tabular-nums; }
+  tr.you td { color: var(--accent); }
+  tr.you a { color: inherit; }
+
+  ul.findings { list-style: none; }
+  ul.findings li { padding: 14px 0; border-top: 1px solid var(--hairline); }
+  ul.findings li:last-child { border-bottom: 1px solid var(--hairline); }
+  ul.findings b { font-weight: 600; }
+
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  footer {
+    margin-top: 88px; padding: 28px 0 64px;
+    border-top: 1px solid var(--hairline);
+    font-size: 14px; color: var(--ink-3);
+    display: flex; gap: 20px; flex-wrap: wrap;
+  }
+</style>
+</head>
+<body>
+<div class="col">
+
+<header>
+  <div class="seal" aria-hidden="true">伯乐</div>
+  <h1>Bole <span class="zh">伯乐</span></h1>
+  <p class="tagline">A research-taste arena — <b>judges predict before the results exist; reality resolves.</b></p>
+
+  <div class="epigraph">
+    <div class="zh">世有伯乐，然后有千里马。千里马常有，而伯乐不常有。</div>
+    <div class="en">There are many swift horses, but very few who can spot them — many have talent, but few can recognize talent when they see it.</div>
+    <div class="src">— 韩愈《马说》 · Han Yu, “On Horses” (9th c.)</div>
+  </div>
+</header>
+
+<section>
+  <h2>What</h2>
+  <p>Can an LLM judge which research approach will win — <em>before the results exist?</em></p>
+  <p class="muted">Bole shows judges only the ex-ante description of competing research attempts. Reality — many systems attempting the same task under the same budget — settles who was right. No committee votes, no citation proxies: outcomes resolve every item.</p>
+</section>
+
+<section>
+  <h2>How</h2>
+  <ol class="steps">
+    <li><b>Blinded pairs.</b> Two attempts at the same ML research task, described up to the decision point — identity, scores, and results stripped.</li>
+    <li><b>Judges predict.</b> Models (or you) pick the attempt that achieved the higher final score, with a confidence.</li>
+    <li><b>Reality resolves.</b> Scoring uses gap-stratified accuracy, calibration, and selection regret — not raw win rate, which rewards whoever controls the item pool.</li>
+  </ol>
+</section>
+
+<section>
+  <h2>Findings · v1 (9 judges, 5 model families)</h2>
+  <div class="tiles">
+    <div class="tile"><div class="n">135×</div><div class="l">more shared blind spots across 5 model families than independence predicts (net of audited bank defects)</div></div>
+    <div class="tile"><div class="n">75%</div><div class="l">of the oracle–random gap captured by the best judge when selecting 1 of 10 attempts</div></div>
+    <div class="tile"><div class="n">28%</div><div class="l">of exploration evidence points to the eventual loser — and every judge follows it</div></div>
+    <div class="tile"><div class="n">4</div><div class="l">sub-skills measured — pick, kill, dare, trust — and they dissociate</div></div>
+  </div>
+</section>
+
+<section>
+  <h2>Leaderboard · v1 (1,842 blinded pairs, reality-resolved)</h2>
+  <table>
+    <thead><tr><th>Judge</th><th>Family</th><th style="text-align:right">Accuracy</th></tr></thead>
+    <tbody>
+      <tr><td>claude-opus-5</td><td class="muted">Anthropic</td><td class="num" style="text-align:right">70.4%</td></tr>
+      <tr><td>kimi-k3</td><td class="muted">Moonshot</td><td class="num" style="text-align:right">68.3%</td></tr>
+      <tr><td>claude-sonnet-5</td><td class="muted">Anthropic</td><td class="num" style="text-align:right">67.8%</td></tr>
+      <tr><td>gpt-5.6-terra</td><td class="muted">OpenAI</td><td class="num" style="text-align:right">62.7%</td></tr>
+      <tr><td>gpt-5.6-luna</td><td class="muted">OpenAI</td><td class="num" style="text-align:right">62.6%</td></tr>
+      <tr><td>gpt-5.6-sol</td><td class="muted">OpenAI</td><td class="num" style="text-align:right">62.0%</td></tr>
+      <tr><td>claude-opus-4-8</td><td class="muted">Anthropic</td><td class="num" style="text-align:right">60.6%</td></tr>
+      <tr><td>grok-4.1-fast</td><td class="muted">xAI</td><td class="num" style="text-align:right">58.8%</td></tr>
+      <tr><td>Kimi-K2.6</td><td class="muted">Moonshot</td><td class="num" style="text-align:right">55.2%</td></tr>
+      <tr class="you"><td>Human experts</td><td><a href="mailto:minglai.yang@scale.com?subject=BoleBench human baseline">join the baseline →</a></td><td class="num" style="text-align:right">? %</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>Findings so far</h2>
+  <ul class="findings">
+    <li><b>Most of the taste is an audacity prior.</b> A one-line heuristic — pick the bolder attempt — scores 77.9% on clear-cut pairs, beating every frontier judge. Where boldness ties, judges keep a real but thin edge (+10–13 pts): that residue is the taste worth measuring.</li>
+    <li><b>One Bo Le for the whole field.</b> Across 8 judges from 5 model families, 4.5% of items are missed by <em>every</em> judge — ≈135× what independent errors would predict (audited: bank defects excluded, only 5 of 90 shared misses are pure noise). Shared training begets shared taste, and shared blind spots.</li>
+    <li><b>Taste is worth real compute.</b> The best judge, picking 1 of 10 real attempts, captures 75% of the oracle–random gap. The worst judge is <em>below random</em>: an unevaluated research preference model can be worse than a coin.</li>
+    <li><b>Judges obey evidence, they don't weigh it.</b> When exploration evidence points the wrong way (28% of the time), accuracy collapses to 23–45%. Trust is a distinct, measurable sub-skill.</li>
+    <li><b>The signal is shallow but real.</b> A 350-character gist captures most of the description signal; process evidence adds up to +18 points; author identity adds almost nothing.</li>
+  </ul>
+</section>
+
+
+<section id="antepost">
+  <h2>Next · AntePost — a benchmark-agnostic building block</h2>
+  <p class="muted">BoleBench grades judges on races already run. AntePost closes the loop forward — an <em>ante-post</em> bet is placed before the field is even final; here, judgment is placed before anything is run — on any problem, from any benchmark or none.</p>
+  <ol class="steps">
+    <li><b>Agents propose.</b> Given a live problem, agents draft candidate solutions — before anything is run.</li>
+    <li><b>Humans propose too.</b> The data we are collecting next: experts read the agent proposals, add their own, and make their own pre-execution call — the ante-post pick.</li>
+    <li><b>Everything becomes blinded pairs.</b> Agent vs agent, human vs agent — the same reality-resolved pairwise primitive, formulated before the outcome exists.</li>
+    <li><b>A judge selects, ex ante.</b> Another agent picks the side that is more promising and better aligned with research intuition. Execution then settles who was right — and every resolution becomes a new benchmark item.</li>
+  </ol>
+  <p class="muted">Benchmark-agnostic by construction: it needs only a problem, proposals, and one eventual execution. Any pipeline that runs experiments can mint reality-resolved taste items.</p>
+</section>
+
+<footer>
+  <span>Paper &amp; arena — coming</span>
+  <span><a href="mailto:minglai.yang@scale.com">contact</a></span>
+  <span>2026</span>
+</footer>
+
+</div>
+</body>
+</html>
