@@ -4694,6 +4694,11 @@ color: var(--amber);
 .cp-camp__stars .iv-icon {
 fill: currentColor;
 }
+.cp-full {
+margin-top: var(--s4);
+padding-top: var(--s4);
+border-top: 1px solid var(--line-soft);
+}
 .cp-blurb {
 margin-bottom: var(--s4);
 font-size: var(--fs-md);
@@ -10610,6 +10615,11 @@ mouse: [
 ['Right click', 'With a blueprint or a target order on the pointer: cancel it'],
 ['Mouse wheel', 'Zoom toward the pointer'],
 ['Middle drag', 'Pan the camera'],
+['Alt + Left drag', 'Pan the camera without a middle button'],
+['Alt + Scroll', 'Rotate the camera. On a trackpad, up and down tilts it'],
+['Two-finger scroll', 'Trackpad: pan the camera (Options: Scroll gesture)'],
+['Pinch', 'Trackpad: zoom toward the pointer'],
+['Two-finger tap', 'Trackpad: the same as a right click'],
 ['Screen edge', 'Scroll the camera (Options: Edge scrolling)']
 ],
 keyboard: [
@@ -13223,7 +13233,7 @@ POINTER,
 ['unflag', 'ui:skip'],
 hint('Pan the camera with W A S D or the arrow keys.', 'Drag one finger across the ground to pan the camera.')] },
 step('pan', 'intro', { ui: 'camera_pan' }, [
-hint('Zoom in and out with the mouse wheel.', 'Pinch two fingers to zoom in and out.')]),
+hint('Zoom in and out with the mouse wheel, or pinch on a trackpad.', 'Pinch two fingers to zoom in and out.')]),
 step('zoom', 'pan', { ui: 'camera_zoom' }, [
 hint('Rotate the view with Q and E.', 'Twist two fingers to rotate the view.')]),
 step('rotate', 'zoom', { ui: 'camera_rotate' }, [
@@ -13370,7 +13380,7 @@ nudge('intro', 'pan', 30,
 'The camera, Commander. Hold W, A, S or D, or push the pointer against the edge of the screen. The Skip button passes any step you already know.',
 'The camera, Commander. Put one finger on open ground and drag. The Skip button passes any step you already know.'),
 nudge('pan', 'zoom', 30,
-'Zoom. Roll the mouse wheel, or use the plus and minus keys.',
+'Zoom. Roll the mouse wheel, pinch on a trackpad, or use the plus and minus keys.',
 'Zoom. Two fingers on the screen: spread them to come closer, pinch them to pull back.'),
 nudge('zoom', 'rotate', 30,
 'Rotate. Q turns the view one way, E the other.',
@@ -30643,7 +30653,7 @@ return api;
 var gfx = IV.gfx = IV.gfx || {};
 var lib = gfx.fxlib = gfx.fxlib || {};
 lib.parts = lib.parts || [];
-if (IV.settings && IV.settings.define) IV.settings.define('flash', 1);
+if (IV.settings && IV.settings.define) { IV.settings.define('flash', 1); IV.settings.define('trackpad', 'auto', ['auto', 'pan', 'zoom']); }
 var QUALITY = {
 low:    { sprites: 600,  spritesDyn: 96,  debris: 80,  segs: 192, segsDyn: 96,  stains: 80,  lights: 64,  shields: 16, wrecks: 12, emitters: 24, rate: 0.5 },
 medium: { sprites: 1500, spritesDyn: 160, debris: 192, segs: 320, segsDyn: 160, stains: 176, lights: 96,  shields: 32, wrecks: 24, emitters: 48, rate: 0.75 },
@@ -30820,7 +30830,7 @@ var half = kind === 'attack' || kind === 'attackMove' ? 1.5 : 1.35;
 F.P.decal(F.P.lights, lib.DEC.MARK, x, z, half, 0, F.reduced ? 1.1 : 0.85, c[0], c[1], c[2], 1, m[0], 0, 0, 0, 3);
 };
 fx.setQuality = function (name) { if (!disposed && QUALITY[name]) build(name); return qName; };
-fx.clear = function () { if (!disposed) { F.P.clear(); queue.length = 0; if (F.clearWorld) F.clearWorld(); } };
+fx.clear = function () { if (!disposed) { F.P.clear(); queue.length = 0; if (F.clearWorld) F.clearWorld(); if (gfx.pipeline && gfx.pipeline.clearBlasts) gfx.pipeline.clearBlasts(); } };
 fx.stats = function () {
 var s = F.P.stats();
 s.wrecks = F.wreckCount ? F.wreckCount() : 0;
@@ -31795,6 +31805,7 @@ function groundLight(x, z, radius, c, alpha, life, delay, wide) {
 var m = alpha * F.flash / Math.max(c[0], c[1], c[2]);
 if (!wide && radius > 4.5) radius = 4.5;
 F.P.decal(F.P.lights, DEC.GLOW, x, z, radius, 0, life, c[0] * m, c[1] * m, c[2] * m, 1, 2.2, 0, 0, 0, 1, delay);
+if (gfx.pipeline && gfx.pipeline.blast) gfx.pipeline.blast(x, F.surface(x, z) + 0.9 + radius * 0.22, z, c, alpha * F.flash, radius, life, delay);
 }
 function scorch(x, z, radius, life, crater, alpha) {
 if (F.wet(x, z) && !F.frozen) return;
@@ -36595,6 +36606,41 @@ var hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 0.8);
 scene.add(hemi);
 var fill = new THREE.DirectionalLight(0xffffff, 0.3);
 scene.add(fill, fill.target);
+var blasts = [], blastN = qName === 'low' ? 0 : (qName === 'medium' ? 2 : 3);
+for (var bi = 0; bi < blastN; bi++) {
+var bl = new THREE.PointLight(0xffffff, 0, 12, 1.3);
+bl.position.set(0, -1000, 0);
+scene.add(bl);
+blasts.push({ light: bl, t0: 0, life: 0, peak: 0, w: 0 });
+}
+P.blast = function (x, y, z, c, power, radius, life, delay) {
+if (!blasts.length || !(power > 0) || !(life > 0)) return false;
+var m = Math.max(c[0], c[1], c[2]) || 1, peak = power * sun.intensity * 20, reach = radius * 2.8 + 4, w = peak * reach;
+var pick = null, i, b;
+for (i = 0; i < blasts.length; i++) {
+b = blasts[i];
+if (b.w > 0 && Math.abs(b.light.position.x - x) + Math.abs(b.light.position.z - z) < 3) { pick = b; break; }
+if (!pick || b.w < pick.w) pick = b;
+}
+if (pick.w > w * 1.15) return false;
+pick.light.position.set(x, y, z);
+pick.light.color.setRGB(c[0] / m, c[1] / m, c[2] / m);
+pick.light.distance = reach;
+pick.t0 = P.time + (delay || 0); pick.life = life * 1.5 + 0.12; pick.peak = peak; pick.w = w;
+return true;
+};
+function updateBlasts() {
+for (var i = 0; i < blasts.length; i++) {
+var b = blasts[i];
+if (!b.w) continue;
+var age = P.time - b.t0, k = age / b.life;
+if (k >= 1) { b.w = 0; b.light.intensity = 0; continue; }
+var env = age < 0 ? 0 : (1 - k) * (1 - k) * Math.min(1, age / 0.03 + 0.35);
+b.light.intensity = b.peak * env;
+b.w = Math.max(1e-4, b.light.intensity * b.light.distance);
+}
+}
+P.clearBlasts = function () { for (var i = 0; i < blasts.length; i++) { blasts[i].w = 0; blasts[i].light.intensity = 0; } };
 P.canvas = canvas; P.renderer = renderer; P.scene = scene; P.camera = camera;
 P.sun = sun; P.hemi = hemi; P.fill = fill;
 P.quality = qName; P.qualityPreset = q;
@@ -36934,6 +36980,7 @@ if (clientW !== cssW || clientH !== cssH || ratioFor(clientW, clientH) !== curPR
 } else if (!composer) fit();
 applyEnv();
 for (var i = 0; i < updaters.length; i++) updaters[i](dt, alpha, P.time);
+updateBlasts();
 if (P.autoShadow) autoShadowFromCamera();
 showShadowOnly(false);
 if (P.needsWarm) P.warm();
@@ -48325,7 +48372,7 @@ if (e.pointerType === 'touch') { touchDown(e, sx, sy); return; }
 ptr.x = sx; ptr.y = sy; ptr.over = true; ptr.shift = e.shiftKey; ptr.ctrl = e.ctrlKey || e.metaKey;
 lastInput.touch = false;
 capture(e);
-if (e.button === 1) { mid = { x: sx, y: sy, moved: 0 }; e.preventDefault(); return; }
+if (e.button === 1 || (e.button === 0 && e.altKey && mode === 'normal')) { mid = { x: sx, y: sy, moved: 0, button: e.button }; e.preventDefault(); return; }
 if (e.button === 2) {
 if (press && press.box) { press = null; endBox(); return; }
 if (mode !== 'normal') { sfx('ui_cancel'); cancel(); return; }
@@ -48376,7 +48423,7 @@ function onPointerUp(e) {
 var sx = e.clientX - rect.left, sy = e.clientY - rect.top;
 if (e.pointerType === 'touch') { touchUp(e, sx, sy, false); return; }
 release(e);
-if (e.button === 1) {
+if (e.button === 1 || (mid && mid.button === e.button)) {
 if (mid && mid.moved > 2) flag('camera_pan');
 mid = null;
 return;
@@ -48397,18 +48444,86 @@ release(e);
 dropGestures();
 }
 function onPointerLeave(e) { if (e.pointerType !== 'touch') ptr.over = false; }
+var pad = { until: 0, zoomAt: 0, panAt: 0, gs: 1, gr: 0, turning: false };
+function padSetting() { var v = IV.settings && IV.settings.trackpad; return v === 'pan' || v === 'zoom' ? v : 'auto'; }
+function fromTrackpad(e) {
+var m = padSetting();
+if (m === 'zoom') return false;
+if (m === 'pan') return true;
+if (e.deltaMode !== 0) return false;
+var t = now(), wd = e.wheelDeltaY;
+var notch = e.deltaX === 0 && e.deltaY !== 0 && (typeof wd === 'number' && wd !== 0 ? wd % 120 === 0 : (Math.abs(e.deltaY) >= 50 && e.deltaY === Math.round(e.deltaY)));
+if (!notch) { pad.until = t + 0.7; return true; }
+if (t < pad.until) { pad.until = t + 0.7; return true; }
+return false;
+}
 function onWheel(e) {
 e.preventDefault();
 if (!active()) return;
 var c = cam();
 if (!c) return;
 refreshRect();
-var dy = e.deltaY * (e.deltaMode === 1 ? 16 : (e.deltaMode === 2 ? 400 : 1));
-if (e.ctrlKey) dy *= 3;
+var unit = e.deltaMode === 1 ? 16 : (e.deltaMode === 2 ? 400 : 1);
+var dx = e.deltaX * unit, dy = e.deltaY * unit;
+var sx = e.clientX - rect.left, sy = e.clientY - rect.top;
+if (e.ctrlKey && !ptr.ctrl) {
+dy = U.clamp(dy, -60, 60);
+if (!dy) return;
+pad.until = now() + 0.7;
+c.zoomBy(Math.exp(dy * 0.011), sx, sy);
+pad.zoomAt = now();
+return;
+}
+var isPad = fromTrackpad(e);
+if (e.altKey) {
+if (isPad) {
+if (Math.abs(dx) > Math.abs(dy) * 0.5) c.rotateBy(U.clamp(dx, -120, 120) * 0.0045, sx, sy);
+if (c.tiltBy && Math.abs(dy) > Math.abs(dx) * 0.5) c.tiltBy(U.clamp(dy, -120, 120) * -0.0022, sx, sy);
+} else c.rotateBy(U.clamp(dy || dx, -240, 240) * 0.0016, sx, sy);
+flag('camera_rotate');
+return;
+}
+if (isPad && !e.shiftKey) {
+dx = U.clamp(dx, -160, 160); dy = U.clamp(dy, -160, 160);
+if (!dx && !dy) return;
+var k = 1.15 * camSpeed();
+c.panByPixels(-dx * k, -dy * k);
+pad.panAt = now();
+return;
+}
+if (!dy) dy = dx;
+if (isPad) dy *= 2.2; else if (e.ctrlKey) dy *= 3;
 dy = U.clamp(dy, -240, 240);
 if (!dy) return;
-c.zoomBy(Math.pow(TUNE.wheel, dy), e.clientX - rect.left, e.clientY - rect.top);
+c.zoomBy(Math.pow(TUNE.wheel, dy), sx, sy);
 flag('camera_zoom');
+}
+function onGestureStart(e) {
+e.preventDefault();
+pad.gs = e.scale || 1; pad.gr = e.rotation || 0; pad.turning = false;
+}
+function onGestureChange(e) {
+e.preventDefault();
+if (!active()) return;
+var c = cam();
+if (!c) return;
+refreshRect();
+var sx = typeof e.clientX === 'number' ? e.clientX - rect.left : undefined, sy = typeof e.clientY === 'number' ? e.clientY - rect.top : undefined;
+var sc = e.scale || 1, rot = e.rotation || 0;
+if (sc > 0 && pad.gs > 0 && Math.abs(sc / pad.gs - 1) > 0.0005) { c.zoomBy(U.clamp(pad.gs / sc, 0.8, 1.25), sx, sy); pad.zoomAt = now(); }
+pad.gs = sc;
+if (!pad.turning && Math.abs(rot) > 9) { pad.turning = true; pad.gr = rot; }
+if (pad.turning) { c.rotateBy(-(rot - pad.gr) * Math.PI / 180, sx, sy); pad.gr = rot; }
+}
+function onGestureEnd(e) {
+e.preventDefault();
+if (pad.turning) flag('camera_rotate');
+pad.turning = false;
+}
+function padSettle() {
+var t = now();
+if (pad.zoomAt && t - pad.zoomAt > 0.25) { pad.zoomAt = 0; flag('camera_zoom'); }
+if (pad.panAt && t - pad.panAt > 0.25) { pad.panAt = 0; flag('camera_pan'); }
 }
 function findTouch(id) { for (var i = 0; i < touches.length; i++) if (touches[i].id === id) return i; return -1; }
 function touchDown(e, sx, sy) {
@@ -48703,6 +48818,7 @@ if (disposed) return;
 if (!active()) { if (wasActive) { wasActive = false; standDown(); } return; }
 wasActive = true;
 prune();
+padSettle();
 updateCamera(dt);
 touchClock();
 updateHover();
@@ -48725,6 +48841,9 @@ on(canvas, 'pointerup', onPointerUp);
 on(canvas, 'pointercancel', onPointerCancel);
 on(canvas, 'pointerleave', onPointerLeave);
 on(canvas, 'wheel', onWheel, { passive: false });
+on(canvas, 'gesturestart', onGestureStart, { passive: false });
+on(canvas, 'gesturechange', onGestureChange, { passive: false });
+on(canvas, 'gestureend', onGestureEnd, { passive: false });
 on(canvas, 'contextmenu', prevent);
 on(canvas, 'selectstart', prevent);
 on(canvas, 'dragstart', prevent);
@@ -52407,7 +52526,7 @@ voice: 'Interface and voice',
 voiceTip: 'Clicks, unit acknowledgements and the announcer.',
 mute: 'Mute all sound',
 edgeScrollTip: 'Move the camera by pushing the pointer against the screen edge.',
-camSpeedTip: 'Keyboard and edge scrolling speed.',
+camSpeedTip: 'Keyboard, trackpad and edge scrolling speed.',
 shakeTip: 'How hard explosions rattle the camera.',
 healthBarsTip: 'When unit and structure health is drawn.',
 resetTitle: 'Restore defaults?',
@@ -52769,10 +52888,12 @@ return IV.data.missions.all().filter(function (m) { return m.campaign === id; })
 },
 mission: function (id) { return id && IV.data.missions.has(id) ? IV.data.missions.get(id) : null; },
 result: function (id) { return campaign.load().done[id] || null; },
+fullClear: function () { return IV.store.get('fullClear', false) === true; },
+setFullClear: function (on) { return IV.store.set('fullClear', !!on); },
 isUnlocked: function (id) {
 var m = campaign.mission(id);
 if (!m) return false;
-if (m.campaign === 'tutorial') return true;
+if (m.campaign === 'tutorial' || campaign.fullClear()) return true;
 var list = campaign.missions(m.campaign);
 var at = list.indexOf(m);
 return at <= 0 || !!campaign.load().done[list[at - 1].id];
@@ -53161,7 +53282,17 @@ icon: 'flag', title: T.noMissionsTitle, text: T.noMissionsText,
 action: ui.button({ label: T.openSkirmish, icon: 'target', onClick: function () { ui.show('skirmish'); } })
 })
 });
-refs.missions = ui.panel({ kicker: ' ', title: ' ', body: [refs.blurb, refs.list], className: 'cp-missions' });
+refs.full = ui.toggle({
+label: 'Full clear mode', value: campaign.fullClear(),
+onChange: function (v) {
+campaign.setFullClear(v);
+refs.camps.refresh();
+selectCampaign(state.campaign, state.mission);
+ui.toast({ kind: 'info', title: 'Full clear mode ' + (v ? 'on' : 'off'), text: v ? 'Every mission in both campaigns is open. Stars and best times still count.' : 'Missions unlock in order again. Your results are kept.' });
+}
+});
+refs.fullRow = ui.field({ label: 'Full clear mode', hint: 'Open every mission of both campaigns, in any order.', control: refs.full, className: 'iv-field--inline cp-full' });
+refs.missions = ui.panel({ kicker: ' ', title: ' ', body: [refs.blurb, refs.list, refs.fullRow], className: 'cp-missions' });
 refs.dKicker = el('span.iv-panel__kicker');
 refs.dTitle = el('h2.cp-detail__title');
 refs.dLoc = el('span');
@@ -53190,6 +53321,7 @@ pg.body.appendChild(refs.detail);
 },
 open: function (args, info) {
 args = args || {};
+refs.full.set(campaign.fullClear(), true);
 refs.camps.refresh();
 refs.diff.set(getDifficulty(), true);
 paintDifficulty();
@@ -53757,6 +53889,7 @@ controls.voice.set(typeof s.voice === 'number' ? s.voice : 1, true);
 controls.mute.set(s.mute === true, true);
 controls.edgeScroll.set(!!s.edgeScroll, true);
 controls.camSpeed.set(s.camSpeed, true);
+controls.trackpad.set(s.trackpad === 'pan' || s.trackpad === 'zoom' ? s.trackpad : 'auto', true);
 }
 function restore() {
 ui.confirm({ title: T.resetTitle, text: T.resetText, confirm: S('options.reset', 'Restore defaults'), cancel: S('menu.cancel', 'Cancel'), icon: 'refresh' })
@@ -53809,6 +53942,10 @@ controls.music = vol('music', S('options.music', 'Music'));
 controls.voice = vol('voice', T.voice);
 controls.mute = ui.toggle({ label: T.mute, onChange: function (v) { setting('mute', v); } });
 controls.edgeScroll = ui.toggle({ label: S('options.edgeScroll', 'Edge scrolling'), onChange: function (v) { setting('edgeScroll', v); } });
+controls.trackpad = ui.segmented({
+options: [{ value: 'auto', label: 'Auto' }, { value: 'pan', label: 'Pan' }, { value: 'zoom', label: 'Zoom' }],
+label: 'Scroll gesture', onChange: function (v) { setting('trackpad', v); }
+});
 controls.camSpeed = ui.slider({
 min: 0.5, max: 2, step: 0.1, format: function (v) { return '×' + v.toFixed(1); }, label: S('options.camSpeed', 'Camera speed'),
 onChange: function (v) { setting('camSpeed', v); }
@@ -53837,7 +53974,8 @@ var ctl = ui.panel({
 kicker: '04', title: S('options.controls', 'Controls'), tools: ui.icon('mouse', 18),
 body: [
 f(S('options.edgeScroll', 'Edge scrolling'), T.edgeScrollTip, controls.edgeScroll, true),
-f(S('options.camSpeed', 'Camera speed'), T.camSpeedTip, controls.camSpeed)
+f(S('options.camSpeed', 'Camera speed'), T.camSpeedTip, controls.camSpeed),
+f('Scroll gesture', 'Auto: a trackpad scroll pans and a mouse wheel zooms. Pinch always zooms.', controls.trackpad)
 ]
 });
 var iface = ui.panel({
