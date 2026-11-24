@@ -2112,6 +2112,86 @@ max-width: 100%;
 min-width: 0;
 padding: 10px 12px;
 }
+.hud-crew {
+display: flex;
+flex: none;
+flex-direction: column;
+gap: 5px;
+width: 84px;
+margin: 10px 0 10px 12px;
+}
+.hud-crew[hidden] {
+display: none;
+}
+.hud-crew__frame {
+display: block;
+width: 84px;
+height: 84px;
+border: 1px solid var(--line-hi);
+border-radius: var(--r1);
+background: var(--ground-deep);
+box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), 0 0 14px rgba(79, 227, 255, 0.08);
+overflow: hidden;
+}
+.hud-crew__face {
+display: block;
+width: 100%;
+height: 100%;
+}
+.hud-crew__name {
+overflow: hidden;
+font-family: var(--font-display);
+font-size: 9.5px;
+font-weight: 600;
+letter-spacing: 0.1em;
+line-height: 1.1;
+text-align: center;
+text-overflow: ellipsis;
+text-transform: uppercase;
+white-space: nowrap;
+color: var(--dim);
+}
+.hud--sheet .hud-crew {
+display: none;
+}
+.bf-officer {
+display: flex;
+align-items: center;
+gap: 14px;
+margin-bottom: var(--s4);
+}
+.bf-officer__frame {
+flex: none;
+width: 104px;
+height: 104px;
+border: 1px solid var(--line-hi);
+border-radius: var(--r1);
+background: var(--ground-deep);
+overflow: hidden;
+}
+.bf-officer__face {
+display: block;
+width: 100%;
+height: 100%;
+}
+.bf-officer__text {
+display: flex;
+flex-direction: column;
+gap: 3px;
+min-width: 0;
+}
+.bf-officer__name {
+font-family: var(--font-display);
+font-size: var(--fs-md);
+font-weight: 600;
+color: var(--text-hi);
+}
+.bf-officer__role {
+font-size: var(--fs-xs);
+letter-spacing: 0.12em;
+text-transform: uppercase;
+color: var(--dim);
+}
 .hud-card {
 display: grid;
 grid-template-columns: 92px minmax(170px, 250px) minmax(184px, 230px);
@@ -47528,7 +47608,7 @@ setSelection(keep, 'prune');
 function selectFeedback() {
 if (!sel.length) return;
 sfx('ui_select');
-if (cap.units.length) call(director(), 'ack', unitIds(), 'select');
+if (cap.units.length) { call(director(), 'ack', unitIds(), 'select'); if (IV.portraits) IV.portraits.poke(); }
 }
 function selectType(ent, add) {
 var g = gfx(), list = null, c = canvas;
@@ -47751,7 +47831,7 @@ function feedback(kind, x, z, ids) {
 var m = MARK[kind];
 if (m) call(effects(), 'marker', x, z, m);
 sfx('ui_command');
-if (ids && ids.length && ACK[kind]) call(director(), 'ack', ids, ACK[kind]);
+if (ids && ids.length && ACK[kind]) { call(director(), 'ack', ids, ACK[kind]); if (IV.portraits) IV.portraits.poke(); }
 if (lastInput.touch) ringAt(lastInput.sx, lastInput.sy, m || 'move');
 }
 function split(fn, target, rest) {
@@ -48911,7 +48991,7 @@ lastInput.touch = false;
 switch (type) {
 case 'stop': case 'scatter':
 if (!ids.length || !send({ type: type, ids: ids })) return false;
-sfx('ui_command'); call(director(), 'ack', ids, type);
+sfx('ui_command'); call(director(), 'ack', ids, type); if (IV.portraits) IV.portraits.poke();
 return true;
 case 'deploy': return deployOrder();
 case 'holdFire': return setStance(currentStance() === 'hold' ? 'aggressive' : 'hold');
@@ -49231,6 +49311,595 @@ if (cursors.names.indexOf(name) < 0) cursors.names.push(name);
 return cursors;
 },
 draw: { line: line, solid: solid, dot: dot, ring: ring, four: four, INK: INK }
+};
+})(window.IV = window.IV || {});
+</script>
+<script>/* src/ui/portraits.js */
+(function (IV) {
+'use strict';
+var PT = IV.portraits = {};
+var TAU = Math.PI * 2;
+function hash(s) { s = String(s); var h = 2166136261; for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+function rnd(seed, n) { var x = Math.sin(seed * 0.0001 + n * 78.233) * 43758.5453; return x - Math.floor(x); }
+function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
+function rgb(hex) { var n = parseInt(hex.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
+function css(c, a) { return 'rgba(' + Math.round(c[0]) + ',' + Math.round(c[1]) + ',' + Math.round(c[2]) + ',' + (a === undefined ? 1 : a) + ')'; }
+function mixc(a, b, k) { return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k]; }
+function tone(c, k) { return k >= 0 ? mixc(c, [255, 255, 255], k) : mixc(c, [0, 0, 0], -k); }
+var SKIN = ['#f1cba8', '#e3b28d', '#cf9a74', '#b07a55', '#855840', '#f5d7bd', '#c08a68'];
+var HAIR = ['#2a1d16', '#4b3323', '#8a5a32', '#d0ab73', '#17171f', '#9a9da6', '#a8402c', '#e9e2d2'];
+var EYES = ['#5b3a22', '#3f5f8a', '#4f7a52', '#7a6a4a', '#2c2c36', '#6b7f95'];
+var NAMED = {
+brandt:  { faction: 'combine', gear: 'cap', fem: 1, skin: 0, hair: 5, style: 2, eye: 1, age: 0.8, bg: 'command', accent: '#ffb347' },
+kite:    { faction: 'combine', gear: 'headset', fem: 0, skin: 3, hair: 4, style: 0, eye: 0, age: 0.2, stubble: 1, bg: 'cockpit', accent: '#ffb347' },
+solenne: { faction: 'concord', gear: 'hood', fem: 1, skin: 5, hair: 7, style: 2, eye: 5, age: 0.3, bg: 'command', accent: '#4fe3ff' },
+wren:    { faction: 'concord', gear: 'goggles', fem: 0, skin: 2, hair: 1, style: 1, eye: 2, age: 0, bg: 'cockpit', accent: '#4fe3ff' }
+};
+var ACCENT = { combine: '#ffb347', concord: '#4fe3ff' };
+function gearFor(id, faction) {
+if (/drone|warden/.test(id)) return 'drone';
+if (/fighter|gunship|phantom|storm/.test(id)) return faction === 'concord' ? 'helm' : 'pilot';
+if (/engineer|technician/.test(id)) return 'hardhat';
+if (/rifleman|lancer|marksman|flame|shade|veil|arclancer/.test(id)) return faction === 'concord' ? 'rebreather' : 'trooper';
+if (/harvester|mcv|scout|skiff/.test(id)) return faction === 'concord' ? 'goggles' : 'headset';
+return faction === 'concord' ? 'helm' : 'tanker';
+}
+PT.spec = function (key, opts) {
+opts = opts || {};
+key = String(key || 'radio');
+var base = NAMED[key], seed = hash(opts.name && !base ? key + ':' + opts.name : key);
+var faction = base ? base.faction : (opts.faction || (/^u_|concord/.test(key) ? 'concord' : (/^n_/.test(key) ? 'neutral' : 'combine')));
+var s = {
+key: key, seed: seed, faction: faction,
+gear: base ? base.gear : gearFor(key, faction),
+fem: base ? base.fem : (rnd(seed, 1) < 0.42 ? 1 : 0),
+skin: SKIN[base ? base.skin : Math.floor(rnd(seed, 2) * SKIN.length)],
+hair: HAIR[base ? base.hair : Math.floor(rnd(seed, 3) * HAIR.length)],
+style: base ? base.style : Math.floor(rnd(seed, 4) * 3),
+eye: EYES[base ? base.eye : Math.floor(rnd(seed, 5) * EYES.length)],
+age: base ? base.age : rnd(seed, 6) * 0.7,
+stubble: base ? !!base.stubble : rnd(seed, 7) < 0.3,
+scar: !base && rnd(seed, 8) < 0.22,
+jaw: 0.95 + rnd(seed, 9) * 0.1,
+brow: (rnd(seed, 10) - 0.5) * 1.6,
+bg: base ? base.bg : (/rifleman|lancer|marksman|flame|shade|veil|arclancer|engineer|technician/.test(key) || key === 'combine' || key === 'concord' ? 'field' : 'cockpit'),
+accent: opts.accent || (base && base.accent) || ACCENT[faction] || '#dfe6f5'
+};
+if (key === 'combine' || key === 'concord') s.gear = key === 'concord' ? 'rebreather' : 'trooper';
+if (s.fem) s.stubble = false;
+return s;
+};
+function background(g, s, t) {
+var ac = rgb(s.accent), i, bg = g.createLinearGradient(0, 0, 0, 100);
+if (s.bg === 'field') {
+if (s.faction === 'concord') { bg.addColorStop(0, '#0c1230'); bg.addColorStop(0.62, '#243a6a'); bg.addColorStop(1, '#0a0e1c'); }
+else { bg.addColorStop(0, '#2a2348'); bg.addColorStop(0.55, '#a5586a'); bg.addColorStop(0.72, '#e8975f'); bg.addColorStop(1, '#14101c'); }
+g.fillStyle = bg; g.fillRect(0, 0, 100, 100);
+g.fillStyle = s.faction === 'concord' ? 'rgba(8,12,28,0.9)' : 'rgba(24,16,30,0.9)';
+g.beginPath(); g.moveTo(0, 74); g.lineTo(14, 66); g.lineTo(24, 71); g.lineTo(38, 60); g.lineTo(52, 70); g.lineTo(66, 63); g.lineTo(80, 69); g.lineTo(100, 58); g.lineTo(100, 100); g.lineTo(0, 100); g.closePath(); g.fill();
+for (i = 0; i < 9; i++) {
+var px = (rnd(s.seed, 40 + i) * 100 + t * (3 + rnd(s.seed, 60 + i) * 5)) % 100, py = (rnd(s.seed, 50 + i) * 70 + Math.sin(t * 0.6 + i) * 3);
+g.fillStyle = css(ac, 0.18 + 0.2 * rnd(s.seed, 70 + i)); g.beginPath(); g.arc(px, py, 0.5 + rnd(s.seed, 80 + i) * 0.7, 0, TAU); g.fill();
+}
+} else {
+bg.addColorStop(0, s.faction === 'concord' ? '#141a3a' : '#1c2236'); bg.addColorStop(1, '#070a12');
+g.fillStyle = bg; g.fillRect(0, 0, 100, 100);
+g.fillStyle = 'rgba(255,255,255,0.035)';
+g.beginPath(); g.moveTo(0, 0); g.lineTo(30, 0); g.lineTo(8, 100); g.lineTo(0, 100); g.closePath(); g.fill();
+g.beginPath(); g.moveTo(100, 0); g.lineTo(74, 0); g.lineTo(92, 100); g.lineTo(100, 100); g.closePath(); g.fill();
+g.strokeStyle = 'rgba(120,140,190,0.16)'; g.lineWidth = 0.8;
+g.beginPath(); g.moveTo(30, 0); g.lineTo(8, 100); g.moveTo(74, 0); g.lineTo(92, 100); g.moveTo(0, 22); g.lineTo(25, 22); g.moveTo(79, 30); g.lineTo(100, 30); g.stroke();
+for (i = 0; i < 6; i++) {
+var on = Math.sin(t * (1.3 + i * 0.7) + i * 2.1 + s.seed % 7) > (i % 2 ? 0.2 : -0.5);
+var lx = i < 3 ? 6 + i * 5.5 : 80 + (i - 3) * 5.5, ly = i < 3 ? 12 : 18;
+g.fillStyle = on ? css(i % 3 === 1 ? [255, 90, 74] : ac, 0.9) : 'rgba(60,70,100,0.5)';
+g.fillRect(lx, ly, 3.2, 1.6);
+}
+if (s.bg === 'command') {
+g.strokeStyle = css(ac, 0.22); g.lineWidth = 0.7;
+g.beginPath(); g.arc(50, 40, 44, 0, TAU); g.stroke();
+g.beginPath(); g.arc(50, 40, 44, t * 0.4, t * 0.4 + 0.9); g.strokeStyle = css(ac, 0.6); g.stroke();
+}
+}
+var glow = g.createRadialGradient(50, 40, 4, 50, 40, 62);
+glow.addColorStop(0, css(ac, 0.3)); glow.addColorStop(1, css(ac, 0));
+g.fillStyle = glow; g.fillRect(0, 0, 100, 100);
+}
+function torso(g, s, t, talk) {
+var ac = rgb(s.accent), con = s.faction === 'concord';
+var suit = rgb(con ? '#2b2748' : '#3a4354'), dark = tone(suit, -0.45), lite = tone(suit, 0.16);
+var br = Math.sin(t * 1.3 + s.seed % 5) * 0.5;
+g.save(); g.translate(0, br);
+var grd = g.createLinearGradient(10, 70, 90, 100);
+grd.addColorStop(0, css(lite)); grd.addColorStop(0.55, css(suit)); grd.addColorStop(1, css(dark));
+g.fillStyle = grd;
+g.beginPath(); g.moveTo(2, 102); g.lineTo(9, 84); g.quadraticCurveTo(14, 76, 30, 73); g.lineTo(40, 70); g.lineTo(60, 70); g.lineTo(70, 73); g.quadraticCurveTo(86, 76, 91, 84); g.lineTo(98, 102); g.closePath(); g.fill();
+g.strokeStyle = css(ac, 0.75); g.lineWidth = 1;
+g.beginPath(); g.moveTo(70, 73); g.quadraticCurveTo(86, 76, 91, 84); g.lineTo(96, 97); g.stroke();
+g.strokeStyle = 'rgba(255,235,210,0.35)'; g.lineWidth = 0.8;
+g.beginPath(); g.moveTo(9, 84); g.quadraticCurveTo(14, 76, 30, 73); g.stroke();
+g.fillStyle = css(dark);
+g.beginPath(); g.moveTo(36, 69); g.lineTo(50, 88); g.lineTo(64, 69); g.lineTo(60, 66); g.lineTo(40, 66); g.closePath(); g.fill();
+g.fillStyle = css(tone(suit, 0.08));
+g.beginPath(); g.moveTo(33, 71); g.lineTo(41, 66.5); g.lineTo(47, 84); g.lineTo(43, 90); g.closePath(); g.fill();
+g.fillStyle = css(tone(suit, -0.12));
+g.beginPath(); g.moveTo(67, 71); g.lineTo(59, 66.5); g.lineTo(53, 84); g.lineTo(57, 90); g.closePath(); g.fill();
+g.strokeStyle = css(ac, 0.9); g.lineWidth = 0.9;
+g.beginPath(); g.moveTo(33.5, 71.5); g.lineTo(41, 67.2); g.moveTo(66.5, 71.5); g.lineTo(59, 67.2); g.stroke();
+g.fillStyle = css(dark, 0.7);
+g.fillRect(15, 86, 15, 1.2); g.fillRect(70, 86, 15, 1.2);
+g.fillStyle = css(ac, 0.95);
+g.fillRect(17, 89.5, 9, 2.2);
+g.fillStyle = css(ac, 0.5 + 0.5 * (talk > 0.05 ? Math.abs(Math.sin(t * 14)) : 0.2));
+g.fillRect(28, 89.5, 2.2, 2.2);
+if (con) {
+g.strokeStyle = css(ac, 0.8); g.lineWidth = 0.8;
+g.beginPath(); g.moveTo(75, 84); g.lineTo(79, 88.5); g.lineTo(75, 93); g.lineTo(71, 88.5); g.closePath(); g.stroke();
+} else {
+g.fillStyle = css(ac, 0.9);
+g.beginPath(); g.moveTo(72, 85); g.lineTo(80, 85); g.lineTo(80, 87); g.lineTo(76, 89.5); g.lineTo(72, 87); g.closePath(); g.fill();
+g.fillStyle = css(ac, 0.55); g.fillRect(72, 91, 8, 1.2);
+}
+g.restore();
+}
+function facePath(g, j) {
+g.beginPath();
+g.moveTo(50 - 17 * j, 39);
+g.bezierCurveTo(50 - 18 * j, 21, 50 + 18 * j, 21, 50 + 17 * j, 39);
+g.bezierCurveTo(50 + 17.5 * j, 49, 50 + 15 * j, 57, 50 + 8.5 * j, 63.5);
+g.quadraticCurveTo(50, 68.5, 50 - 8.5 * j, 63.5);
+g.bezierCurveTo(50 - 15 * j, 57, 50 - 17.5 * j, 49, 50 - 17 * j, 39);
+g.closePath();
+}
+function eye(g, cx, cy, s, look, blink, glowIris, side) {
+var open = 1 - blink, ry = 2.7 * (0.12 + 0.88 * open), ac = rgb(s.accent);
+g.save();
+g.beginPath(); g.ellipse(cx, cy + (1 - open) * 0.8, 4.4, ry, 0, 0, TAU); g.clip();
+g.fillStyle = '#f4efe9'; g.fillRect(cx - 5, cy - 4, 10, 8);
+g.fillStyle = 'rgba(60,40,60,0.28)'; g.fillRect(cx - 5, cy - 4, 10, 2.3);
+var ix = cx + look[0] * 1.5, iy = cy + look[1] * 0.7 - 0.1;
+g.fillStyle = glowIris ? css(tone(ac, 0.25)) : s.eye;
+g.beginPath(); g.arc(ix, iy, 2.25, 0, TAU); g.fill();
+g.strokeStyle = 'rgba(15,10,12,0.55)'; g.lineWidth = 0.45; g.stroke();
+g.fillStyle = '#0d0a0c'; g.beginPath(); g.arc(ix, iy, 1.05, 0, TAU); g.fill();
+g.fillStyle = 'rgba(255,255,255,0.92)'; g.beginPath(); g.arc(ix - 0.8, iy - 0.85, 0.55, 0, TAU); g.fill();
+g.restore();
+g.strokeStyle = 'rgba(28,16,18,0.92)'; g.lineWidth = s.fem ? 1.15 : 0.85; g.lineCap = 'round';
+g.beginPath(); g.moveTo(cx - 4.5, cy + 0.5 + (1 - open) * 1.2);
+g.quadraticCurveTo(cx, cy - 3.3 * open + (1 - open) * 1.9, cx + 4.5, cy + 0.3 + (1 - open) * 1.2); g.stroke();
+if (s.fem && open > 0.4) { g.lineWidth = 0.7; g.beginPath(); g.moveTo(cx + side * 4.3, cy + 0.2); g.lineTo(cx + side * 5.7, cy - 1.1); g.stroke(); }
+g.strokeStyle = 'rgba(60,30,30,0.28)'; g.lineWidth = 0.5;
+g.beginPath(); g.moveTo(cx - 3.6, cy + 2.6); g.quadraticCurveTo(cx, cy + 3.6, cx + 3.6, cy + 2.5); g.stroke();
+}
+function head(g, s, t, talk, look, blink, mouth, hideEyes, hideMouth) {
+var sk = rgb(s.skin), j = s.jaw, ac = rgb(s.accent), hc = rgb(s.hair);
+if (s.faction === 'concord') sk = mixc(sk, [150, 170, 225], 0.2);
+var dk = mixc(tone(sk, -0.3), [70, 30, 60], 0.25);
+g.fillStyle = css(tone(sk, -0.34));
+g.beginPath(); g.moveTo(42, 58); g.lineTo(58, 58); g.lineTo(60.5, 74); g.lineTo(50, 80); g.lineTo(39.5, 74); g.closePath(); g.fill();
+g.fillStyle = 'rgba(12,8,24,0.4)';
+g.beginPath(); g.moveTo(42, 60); g.quadraticCurveTo(50, 70, 58, 60); g.lineTo(59.5, 68); g.quadraticCurveTo(50, 74, 40.5, 68); g.closePath(); g.fill();
+if (s.style === 2 && (s.gear === 'cap' || s.gear === 'headset' || s.gear === 'hardhat')) {
+g.fillStyle = css(tone(hc, -0.2));
+g.beginPath(); g.moveTo(31.5, 30); g.quadraticCurveTo(27, 48, 31, 64); g.lineTo(38, 62); g.lineTo(36, 34); g.closePath(); g.fill();
+g.beginPath(); g.moveTo(68.5, 30); g.quadraticCurveTo(73, 48, 69, 64); g.lineTo(62, 62); g.lineTo(64, 34); g.closePath(); g.fill();
+}
+g.fillStyle = css(tone(sk, -0.16));
+g.beginPath(); g.ellipse(50 - 17.3 * j, 45, 2.6, 4.6, 0, 0, TAU); g.fill();
+g.fillStyle = css(dk);
+g.beginPath(); g.ellipse(50 + 17.3 * j, 45, 2.6, 4.6, 0, 0, TAU); g.fill();
+var grd = g.createLinearGradient(32, 24, 66, 62);
+grd.addColorStop(0, css(tone(sk, 0.14))); grd.addColorStop(0.5, css(sk)); grd.addColorStop(1, css(tone(sk, -0.14)));
+g.fillStyle = grd; facePath(g, j); g.fill();
+g.save(); facePath(g, j); g.clip();
+g.fillStyle = css(mixc(dk, [20, 14, 50], 0.3), 0.27);
+g.beginPath(); g.moveTo(54, 20); g.quadraticCurveTo(58, 40, 55, 52); g.quadraticCurveTo(54, 60, 58, 70); g.lineTo(72, 70); g.lineTo(72, 20); g.closePath(); g.fill();
+var ch = g.createRadialGradient(40, 52, 0.5, 40, 52, 7);
+ch.addColorStop(0, 'rgba(225,95,80,0.2)'); ch.addColorStop(1, 'rgba(225,95,80,0)');
+g.fillStyle = ch; g.fillRect(30, 44, 20, 16);
+var fh = g.createRadialGradient(43, 30, 1, 43, 30, 13);
+fh.addColorStop(0, 'rgba(255,246,230,0.3)'); fh.addColorStop(1, 'rgba(255,246,230,0)');
+g.fillStyle = fh; g.fillRect(30, 20, 28, 22);
+g.fillStyle = css(dk, 0.3);
+g.beginPath(); g.ellipse(42, 41.2, 6, 2.6, 0, 0, TAU); g.fill();
+g.beginPath(); g.ellipse(58, 41.2, 6, 2.6, 0, 0, TAU); g.fill();
+if (s.stubble) {
+g.fillStyle = 'rgba(40,32,36,0.22)';
+g.beginPath(); g.moveTo(33, 52); g.quadraticCurveTo(42, 56, 44, 56.5); g.lineTo(56, 56.5); g.quadraticCurveTo(60, 56, 67, 52); g.lineTo(67, 72); g.lineTo(33, 72); g.closePath(); g.fill();
+}
+if (s.age > 0.45) {
+g.strokeStyle = css(dk, 0.3 * s.age); g.lineWidth = 0.55;
+g.beginPath(); g.moveTo(44.5, 53.5); g.quadraticCurveTo(42.6, 57, 43.6, 60.5); g.moveTo(55.5, 53.5); g.quadraticCurveTo(57.4, 57, 56.4, 60.5);
+g.moveTo(38, 46.8); g.lineTo(45, 47.6); g.moveTo(62, 46.8); g.lineTo(55, 47.6); g.stroke();
+}
+g.strokeStyle = css(ac, 0.8); g.lineWidth = 1.5;
+g.beginPath(); g.moveTo(50 + 16.6 * j, 34); g.bezierCurveTo(50 + 17.6 * j, 48, 50 + 15 * j, 57, 50 + 8.5 * j, 63.5); g.stroke();
+g.restore();
+/* nose */
+g.fillStyle = css(dk, 0.42);
+g.beginPath(); g.moveTo(50.4, 43); g.lineTo(54, 52.6); g.quadraticCurveTo(52.6, 55, 50, 54.6); g.closePath(); g.fill();
+g.strokeStyle = 'rgba(255,244,228,0.34)'; g.lineWidth = 0.9; g.lineCap = 'round';
+g.beginPath(); g.moveTo(49.5, 43.5); g.lineTo(49.2, 51.2); g.stroke();
+g.strokeStyle = css(tone(dk, -0.2), 0.6); g.lineWidth = 0.6;
+g.beginPath(); g.moveTo(46.6, 53.6); g.quadraticCurveTo(48, 55.2, 50, 54.7); g.quadraticCurveTo(52.2, 55.3, 53.6, 53.6); g.stroke();
+if (!hideEyes) {
+eye(g, 42, 43, s, look, blink, s.gear === 'rebreather', -1);
+eye(g, 58, 43, s, look, blink, s.gear === 'rebreather', 1);
+var raise = talk * 0.5 * Math.sin(t * 5.2) - blink * 0.5, bw = s.fem ? 1.15 : 1.75;
+g.strokeStyle = css(tone(hc, -0.3), 0.95); g.lineCap = 'round'; g.lineWidth = bw;
+g.beginPath(); g.moveTo(36.6, 38.9 - raise + s.brow * 0.3); g.quadraticCurveTo(41, 36.3 - raise, 46.6, 37.9 - raise - s.brow * 0.4);
+g.moveTo(63.4, 38.9 - raise + s.brow * 0.3); g.quadraticCurveTo(59, 36.3 - raise, 53.4, 37.9 - raise - s.brow * 0.4); g.stroke();
+if (s.scar) {
+g.strokeStyle = 'rgba(255,225,215,0.55)'; g.lineWidth = 0.6;
+g.beginPath(); g.moveTo(60.5, 34); g.lineTo(62.4, 40); g.moveTo(62.6, 46.5); g.lineTo(63.6, 51); g.stroke();
+}
+}
+if (!hideMouth) {
+var my = 59.4, m = mouth, lip = mixc(sk, s.fem ? [190, 60, 70] : [150, 70, 62], s.fem ? 0.62 : 0.4);
+if (m > 0.06) {
+g.fillStyle = '#2a0e12';
+g.beginPath(); g.ellipse(50, my + m * 1.2, 4.3 - m * 0.5, 0.5 + 2.7 * m, 0, 0, TAU); g.fill();
+if (m > 0.22) { g.fillStyle = '#efe9e2'; g.fillRect(46.9, my - 0.2 - m * 0.6, 6.2, 1.15); }
+if (m > 0.5) { g.fillStyle = '#a84a52'; g.beginPath(); g.ellipse(50, my + m * 2.9, 2.4, 0.9, 0, 0, TAU); g.fill(); }
+}
+g.strokeStyle = css(lip); g.lineWidth = s.fem ? 1.5 : 1.15; g.lineCap = 'round';
+g.beginPath(); g.moveTo(45.2, my + 0.1); g.quadraticCurveTo(47.6, my - 1.3 - m * 0.4, 50, my - 0.5 - m * 0.5); g.quadraticCurveTo(52.4, my - 1.3 - m * 0.4, 54.8, my + 0.1); g.stroke();
+g.strokeStyle = css(tone(lip, s.fem ? 0.1 : -0.05)); g.lineWidth = s.fem ? 1.7 : 1.2;
+g.beginPath(); g.moveTo(45.8, my + 0.5 + m * 1.6); g.quadraticCurveTo(50, my + 2.1 + m * 3.6, 54.2, my + 0.5 + m * 1.6); g.stroke();
+g.strokeStyle = 'rgba(40,12,16,0.75)'; g.lineWidth = 0.5;
+if (m <= 0.06) { g.beginPath(); g.moveTo(45.4, my + 0.2); g.quadraticCurveTo(50, my + 0.9, 54.6, my + 0.1); g.stroke(); }
+g.fillStyle = css(dk, 0.26);
+g.beginPath(); g.ellipse(50, my + 4.3 + m * 2.6, 3.4, 0.9, 0, 0, TAU); g.fill();
+}
+}
+function hair(g, s) {
+var hc = rgb(s.hair), j = s.jaw;
+var grd = g.createLinearGradient(34, 18, 66, 36);
+grd.addColorStop(0, css(tone(hc, 0.22))); grd.addColorStop(1, css(tone(hc, -0.25)));
+g.fillStyle = grd;
+g.beginPath();
+if (s.style === 1) {
+g.moveTo(50 - 18 * j, 41); g.bezierCurveTo(50 - 21 * j, 17, 50 + 21 * j, 15, 50 + 18 * j, 41);
+g.lineTo(50 + 15.5 * j, 33); g.quadraticCurveTo(56, 27, 45, 29.5); g.quadraticCurveTo(38, 31.5, 50 - 15.5 * j, 36);
+} else {
+g.moveTo(50 - 17.6 * j, 40); g.bezierCurveTo(50 - 20 * j, 18, 50 + 20 * j, 18, 50 + 17.6 * j, 40);
+g.lineTo(50 + 15.5 * j, 32.5); g.quadraticCurveTo(50, 25.5, 50 - 15.5 * j, 32.5);
+}
+g.closePath(); g.fill();
+g.strokeStyle = css(tone(hc, 0.4), 0.35); g.lineWidth = 0.6;
+g.beginPath(); g.moveTo(40, 24.5); g.quadraticCurveTo(46, 21, 54, 22.5); g.stroke();
+}
+var GEAR = {};
+function shell(g, col, x0, x1, top, y, brow) {
+var c = rgb(col), grd = g.createLinearGradient(x0, top, x1, y);
+grd.addColorStop(0, css(tone(c, 0.3))); grd.addColorStop(0.45, css(c)); grd.addColorStop(1, css(tone(c, -0.45)));
+g.fillStyle = grd;
+g.beginPath(); g.moveTo(x0, y); g.bezierCurveTo(x0 - 2, top, x1 + 2, top, x1, y);
+g.lineTo(x1 - 4, brow + 2.5); g.quadraticCurveTo(50, brow - 3, x0 + 4, brow + 2.5); g.closePath(); g.fill();
+}
+function strap(g, col) {
+g.strokeStyle = col; g.lineWidth = 1.5; g.lineCap = 'round';
+g.beginPath(); g.moveTo(33.5, 46); g.quadraticCurveTo(37, 62, 46, 66.5); g.moveTo(66.5, 46); g.quadraticCurveTo(63, 62, 54, 66.5); g.stroke();
+}
+function mic(g, s, t, talk) {
+var ac = rgb(s.accent);
+g.strokeStyle = '#161b28'; g.lineWidth = 1.4; g.lineCap = 'round';
+g.beginPath(); g.moveTo(31, 49); g.quadraticCurveTo(31, 63, 42.5, 62.5); g.stroke();
+g.fillStyle = '#10141f'; g.fillRect(41.5, 60.6, 5.2, 3.6);
+g.fillStyle = css(ac, talk > 0.05 ? 0.6 + 0.4 * Math.abs(Math.sin(t * 15)) : 0.45); g.fillRect(42.4, 61.5, 1.6, 1.8);
+}
+function cups(g, s, col) {
+var ac = rgb(s.accent), c = rgb(col);
+g.fillStyle = css(tone(c, 0.1)); roundRect(g, 26, 37, 7.5, 14.5, 2.4); g.fill();
+g.fillStyle = css(tone(c, -0.5)); roundRect(g, 66.5, 37, 7.5, 14.5, 2.4); g.fill();
+g.fillStyle = css(ac, 0.95); g.fillRect(28.2, 42.5, 1.5, 4);
+g.strokeStyle = css(ac, 0.9); g.lineWidth = 0.9; g.beginPath(); g.moveTo(73.6, 39.5); g.lineTo(73.6, 49.5); g.stroke();
+}
+function roundRect(g, x, y, w, h, r) {
+g.beginPath(); g.moveTo(x + r, y); g.lineTo(x + w - r, y); g.quadraticCurveTo(x + w, y, x + w, y + r); g.lineTo(x + w, y + h - r);
+g.quadraticCurveTo(x + w, y + h, x + w - r, y + h); g.lineTo(x + r, y + h); g.quadraticCurveTo(x, y + h, x, y + h - r); g.lineTo(x, y + r); g.quadraticCurveTo(x, y, x + r, y); g.closePath();
+}
+GEAR.tanker = function (g, s, t, talk) {
+shell(g, '#4a5240', 29.5, 70.5, 12, 41, 30);
+g.strokeStyle = 'rgba(18,22,16,0.55)'; g.lineWidth = 1.1;
+g.beginPath(); g.moveTo(39, 31); g.quadraticCurveTo(37.5, 21, 41.5, 15.5); g.moveTo(50, 28.6); g.lineTo(50, 13.6); g.moveTo(61, 31); g.quadraticCurveTo(62.5, 21, 58.5, 15.5); g.stroke();
+g.strokeStyle = 'rgba(255,250,235,0.3)'; g.lineWidth = 0.9;
+g.beginPath(); g.moveTo(34.5, 26); g.quadraticCurveTo(38, 16.5, 46, 14.6); g.stroke();
+g.fillStyle = s.accent; g.beginPath(); g.moveTo(50, 22.2); g.lineTo(52.6, 25); g.lineTo(50, 27.8); g.lineTo(47.4, 25); g.closePath(); g.fill();
+cups(g, s, '#2c3226'); strap(g, 'rgba(28,30,24,0.85)'); mic(g, s, t, talk);
+};
+GEAR.trooper = function (g, s, t) {
+var ac = rgb(s.accent);
+shell(g, '#56604e', 28.5, 71.5, 11, 40, 31);
+g.fillStyle = '#2f372b';
+g.beginPath(); g.moveTo(27, 39); g.quadraticCurveTo(50, 28.5, 73, 39); g.lineTo(72, 42); g.quadraticCurveTo(50, 32.5, 28, 42); g.closePath(); g.fill();
+g.strokeStyle = 'rgba(255,250,235,0.3)'; g.lineWidth = 0.9;
+g.beginPath(); g.moveTo(33, 27); g.quadraticCurveTo(36, 16, 46, 13.4); g.stroke();
+g.strokeStyle = '#1b1f18'; g.lineWidth = 2.4; g.beginPath(); g.moveTo(30.5, 26.5); g.quadraticCurveTo(50, 19, 69.5, 26.5); g.stroke();
+g.fillStyle = '#141820'; roundRect(g, 37.5, 19.5, 11, 7.6, 2.4); g.fill(); roundRect(g, 51.5, 19.5, 11, 7.6, 2.4); g.fill();
+var sh = (t * 9 + s.seed % 13) % 46;
+g.fillStyle = css(ac, 0.55); roundRect(g, 38.6, 20.6, 8.8, 5.4, 1.6); g.fill(); roundRect(g, 52.6, 20.6, 8.8, 5.4, 1.6); g.fill();
+g.save(); g.beginPath(); g.rect(38.6, 20.6, 22.8, 5.4); g.clip();
+g.fillStyle = 'rgba(255,255,255,0.5)'; g.beginPath(); g.moveTo(30 + sh, 19); g.lineTo(33 + sh, 19); g.lineTo(29 + sh, 28); g.lineTo(26 + sh, 28); g.closePath(); g.fill(); g.restore();
+strap(g, 'rgba(30,34,26,0.85)');
+g.fillStyle = '#2f372b'; roundRect(g, 46.6, 65, 6.8, 2.6, 1); g.fill();
+};
+GEAR.pilot = function (g, s, t, talk) {
+var ac = rgb(s.accent);
+shell(g, '#d9dde6', 27, 73, 8, 46, 31);
+g.fillStyle = s.accent; g.beginPath(); g.moveTo(47, 10.6); g.lineTo(53, 10.6); g.lineTo(54.6, 29.6); g.lineTo(45.4, 29.6); g.closePath(); g.fill();
+g.fillStyle = 'rgba(20,24,36,0.85)'; g.fillRect(48.6, 13, 2.8, 8);
+g.strokeStyle = 'rgba(255,255,255,0.65)'; g.lineWidth = 1.1; g.lineCap = 'round';
+g.beginPath(); g.moveTo(32.5, 28); g.quadraticCurveTo(35, 15.5, 43.5, 12); g.stroke();
+var vg = g.createLinearGradient(30, 32, 70, 50);
+vg.addColorStop(0, css(mixc(ac, [20, 24, 40], 0.45))); vg.addColorStop(0.5, '#10131f'); vg.addColorStop(1, css(mixc(ac, [10, 12, 22], 0.8)));
+g.fillStyle = vg;
+g.beginPath(); g.moveTo(29.5, 33.5); g.quadraticCurveTo(50, 27.5, 70.5, 33.5); g.lineTo(69.6, 46.5); g.quadraticCurveTo(61, 51.5, 54.5, 48.6); g.quadraticCurveTo(50, 46.8, 45.5, 48.6); g.quadraticCurveTo(39, 51.5, 30.4, 46.5); g.closePath(); g.fill();
+g.save(); g.clip();
+var sw = (t * 14 + s.seed % 17) % 90 - 20;
+g.fillStyle = 'rgba(255,255,255,0.3)'; g.beginPath(); g.moveTo(sw, 28); g.lineTo(sw + 7, 28); g.lineTo(sw - 3, 54); g.lineTo(sw - 10, 54); g.closePath(); g.fill();
+g.fillStyle = css(ac, 0.75);
+for (var i = 0; i < 4; i++) g.fillRect(35 + i * 2.4, 38 + i * 1.6, 5 + ((Math.floor(t * 3) + i * 5 + s.seed) % 4) * 1.4, 0.7);
+g.strokeStyle = css(ac, 0.7); g.lineWidth = 0.6; g.beginPath(); g.arc(60.5, 40.5, 3, 0, TAU); g.moveTo(57, 40.5); g.lineTo(64, 40.5); g.stroke();
+g.restore();
+g.strokeStyle = '#151924'; g.lineWidth = 1.2;
+g.beginPath(); g.moveTo(29.5, 33.5); g.quadraticCurveTo(50, 27.5, 70.5, 33.5); g.stroke();
+var mg = g.createLinearGradient(41, 50, 59, 68);
+mg.addColorStop(0, '#565d6e'); mg.addColorStop(1, '#1e2230');
+g.fillStyle = mg;
+g.beginPath(); g.moveTo(42.5, 50.5); g.quadraticCurveTo(50, 47.5, 57.5, 50.5); g.lineTo(58.6, 61); g.quadraticCurveTo(50, 70.5, 41.4, 61); g.closePath(); g.fill();
+g.fillStyle = '#12151f'; g.beginPath(); g.arc(50, 58.6, 3.4, 0, TAU); g.fill();
+g.fillStyle = css(ac, talk > 0.05 ? 0.5 + 0.5 * Math.abs(Math.sin(t * 13)) : 0.35); g.beginPath(); g.arc(50, 58.6, 1.5, 0, TAU); g.fill();
+g.strokeStyle = '#2a2f3e'; g.lineWidth = 3.4; g.lineCap = 'round';
+g.beginPath(); g.moveTo(50, 66); g.quadraticCurveTo(48, 78, 41, 88); g.stroke();
+g.strokeStyle = 'rgba(10,12,20,0.6)'; g.lineWidth = 0.6;
+for (var k = 0; k < 6; k++) { g.beginPath(); g.moveTo(47.8 - k * 1.2, 69 + k * 3.2); g.lineTo(51.2 - k * 1.2, 70 + k * 3.2); g.stroke(); }
+g.strokeStyle = '#1c2030'; g.lineWidth = 2;
+g.beginPath(); g.moveTo(41.6, 55); g.lineTo(30.5, 49); g.moveTo(58.4, 55); g.lineTo(69.5, 49); g.stroke();
+};
+GEAR.helm = function (g, s, t, talk) {
+var ac = rgb(s.accent);
+shell(g, '#3a3560', 26.5, 73.5, 7, 50, 60);
+var fg = g.createLinearGradient(30, 20, 70, 70);
+fg.addColorStop(0, '#514a86'); fg.addColorStop(0.5, '#2b2750'); fg.addColorStop(1, '#131128');
+g.fillStyle = fg;
+g.beginPath(); g.moveTo(28, 40); g.bezierCurveTo(27, 12, 73, 12, 72, 40); g.lineTo(69, 56); g.lineTo(57, 69); g.lineTo(43, 69); g.lineTo(31, 56); g.closePath(); g.fill();
+g.strokeStyle = 'rgba(190,200,255,0.4)'; g.lineWidth = 1; g.lineCap = 'round';
+g.beginPath(); g.moveTo(32.6, 30); g.quadraticCurveTo(36, 17.5, 46, 14.5); g.stroke();
+var pulse = 0.75 + 0.25 * Math.sin(t * 2.6) + talk * 0.3 * Math.sin(t * 16);
+g.shadowColor = s.accent; g.shadowBlur = 6;
+g.fillStyle = css(tone(ac, 0.3), clamp(pulse, 0, 1));
+g.beginPath(); g.moveTo(33, 40); g.lineTo(46, 43.4); g.lineTo(54, 43.4); g.lineTo(67, 40); g.lineTo(66.2, 44.6); g.lineTo(54, 47.4); g.lineTo(46, 47.4); g.lineTo(33.8, 44.6); g.closePath(); g.fill();
+g.shadowBlur = 0;
+var sc = 34 + ((t * 22 + s.seed % 11) % 32);
+g.fillStyle = 'rgba(255,255,255,0.85)'; g.fillRect(sc, 42.4, 1.4, 3.4);
+g.strokeStyle = css(ac, 0.75); g.lineWidth = 0.8;
+g.beginPath(); g.moveTo(50, 14.5); g.lineTo(50, 36); g.moveTo(43, 69); g.lineTo(46.5, 55); g.lineTo(53.5, 55); g.lineTo(57, 69); g.stroke();
+g.fillStyle = css(ac, 0.3 + 0.6 * talk * Math.abs(Math.sin(t * 12)));
+for (var i = 0; i < 3; i++) g.fillRect(47.4, 58 + i * 2.6, 5.2, 1.1);
+g.strokeStyle = css(ac, 0.8); g.lineWidth = 1.3;
+g.beginPath(); g.moveTo(71.6, 34); g.lineTo(69.2, 55.6); g.lineTo(57.4, 68.6); g.stroke();
+};
+GEAR.hardhat = function (g, s, t, talk) {
+var ac = rgb(s.accent), con = s.faction === 'concord';
+shell(g, con ? '#3d6f8f' : '#e2a23a', 29, 71, 10, 37, 31);
+g.fillStyle = con ? '#2a5068' : '#b9792a';
+g.beginPath(); g.moveTo(25.5, 36); g.quadraticCurveTo(50, 27.5, 74.5, 36); g.lineTo(73.5, 39.2); g.quadraticCurveTo(50, 31.5, 26.5, 39.2); g.closePath(); g.fill();
+g.strokeStyle = 'rgba(255,255,255,0.5)'; g.lineWidth = 1; g.lineCap = 'round';
+g.beginPath(); g.moveTo(33.5, 26); g.quadraticCurveTo(37, 15.5, 46, 12.6); g.stroke();
+g.strokeStyle = 'rgba(60,34,8,0.4)'; g.lineWidth = 1; g.beginPath(); g.moveTo(44, 12.4); g.lineTo(43, 29.6); g.moveTo(56, 12.4); g.lineTo(57, 29.6); g.stroke();
+var fl = 0.7 + 0.3 * Math.sin(t * 23) * Math.sin(t * 3.1);
+g.fillStyle = '#1b1f2a'; roundRect(g, 45.4, 19.6, 9.2, 7, 1.6); g.fill();
+g.shadowColor = '#fff3c4'; g.shadowBlur = 8; g.fillStyle = 'rgba(255,246,205,' + fl.toFixed(2) + ')';
+g.beginPath(); g.arc(50, 23.1, 2.5, 0, TAU); g.fill(); g.shadowBlur = 0;
+g.strokeStyle = 'rgba(210,235,255,0.85)'; g.lineWidth = 0.9;
+roundRect(g, 35.6, 38.6, 12.6, 8.6, 2.6); g.stroke(); roundRect(g, 51.8, 38.6, 12.6, 8.6, 2.6); g.stroke();
+g.beginPath(); g.moveTo(48.2, 42); g.lineTo(51.8, 42); g.stroke();
+g.fillStyle = 'rgba(190,225,255,0.12)'; roundRect(g, 35.6, 38.6, 12.6, 8.6, 2.6); g.fill(); roundRect(g, 51.8, 38.6, 12.6, 8.6, 2.6); g.fill();
+g.strokeStyle = 'rgba(255,255,255,0.55)'; g.lineWidth = 0.8; g.beginPath(); g.moveTo(37.6, 44.6); g.lineTo(40.6, 40.4); g.moveTo(53.8, 44.6); g.lineTo(56.8, 40.4); g.stroke();
+g.fillStyle = css(ac, 0.9); g.fillRect(60, 29.4, 6, 1.6);
+};
+GEAR.cap = function (g, s) {
+var ac = rgb(s.accent);
+var grd = g.createLinearGradient(30, 6, 70, 30);
+grd.addColorStop(0, '#46557e'); grd.addColorStop(1, '#1d2540');
+g.fillStyle = grd;
+g.beginPath(); g.moveTo(29.5, 31); g.lineTo(31, 14.5); g.quadraticCurveTo(50, 3.5, 69, 14.5); g.lineTo(70.5, 31); g.quadraticCurveTo(50, 25.5, 29.5, 31); g.closePath(); g.fill();
+g.fillStyle = '#10141f';
+g.beginPath(); g.moveTo(27.5, 31.4); g.quadraticCurveTo(50, 25, 72.5, 31.4); g.lineTo(76, 37); g.quadraticCurveTo(50, 30, 24, 37); g.closePath(); g.fill();
+g.strokeStyle = 'rgba(255,255,255,0.22)'; g.lineWidth = 0.7; g.beginPath(); g.moveTo(26, 36.2); g.quadraticCurveTo(50, 29.6, 74, 36.2); g.stroke();
+g.strokeStyle = css(ac); g.lineWidth = 2; g.beginPath(); g.moveTo(30.2, 27.6); g.quadraticCurveTo(50, 22, 69.8, 27.6); g.stroke();
+g.fillStyle = css(ac); g.beginPath(); g.moveTo(50, 10.5); g.lineTo(54.4, 15.6); g.lineTo(50, 21); g.lineTo(45.6, 15.6); g.closePath(); g.fill();
+g.fillStyle = '#1d2540'; g.beginPath(); g.arc(50, 15.7, 1.5, 0, TAU); g.fill();
+g.strokeStyle = 'rgba(255,255,255,0.3)'; g.lineWidth = 0.8; g.beginPath(); g.moveTo(33.5, 15.6); g.quadraticCurveTo(40, 10.4, 46, 9); g.stroke();
+};
+GEAR.headset = function (g, s, t, talk) {
+g.strokeStyle = '#1a1f2e'; g.lineWidth = 3.2; g.lineCap = 'round';
+g.beginPath(); g.moveTo(30.5, 39); g.bezierCurveTo(28, 9, 72, 9, 69.5, 39); g.stroke();
+g.strokeStyle = 'rgba(160,175,215,0.5)'; g.lineWidth = 0.8;
+g.beginPath(); g.moveTo(31.5, 30); g.bezierCurveTo(33, 15, 43, 12.6, 50, 12.6); g.stroke();
+cups(g, s, '#30384e'); mic(g, s, t, talk);
+};
+GEAR.hood = function (g, s, t) {
+var ac = rgb(s.accent);
+var grd = g.createLinearGradient(20, 6, 80, 74);
+grd.addColorStop(0, '#3d3a72'); grd.addColorStop(0.5, '#242248'); grd.addColorStop(1, '#0f0e22');
+g.fillStyle = grd;
+g.beginPath(); g.moveTo(16, 82); g.bezierCurveTo(12, 30, 26, 3, 50, 3); g.bezierCurveTo(74, 3, 88, 30, 84, 82);
+g.lineTo(66, 70); g.bezierCurveTo(72, 40, 66, 17.5, 50, 17.5); g.bezierCurveTo(34, 17.5, 28, 40, 34, 70); g.closePath(); g.fill();
+g.fillStyle = 'rgba(8,6,26,0.4)';
+g.beginPath(); g.moveTo(34, 70); g.bezierCurveTo(28, 40, 34, 17.5, 50, 17.5); g.bezierCurveTo(66, 17.5, 72, 40, 66, 70); g.lineTo(63, 62); g.bezierCurveTo(68, 40, 63, 24, 50, 24); g.bezierCurveTo(37, 24, 32, 40, 37, 62); g.closePath(); g.fill();
+g.shadowColor = s.accent; g.shadowBlur = 5;
+g.strokeStyle = css(ac, 0.9); g.lineWidth = 1;
+g.beginPath(); g.moveTo(34.4, 68.6); g.bezierCurveTo(28.6, 40, 34.6, 18.3, 50, 18.3); g.bezierCurveTo(65.4, 18.3, 71.4, 40, 65.6, 68.6); g.stroke();
+g.fillStyle = css(tone(ac, 0.3), 0.75 + 0.25 * Math.sin(t * 2.2));
+g.beginPath(); g.moveTo(50, 27.5); g.lineTo(52, 31); g.lineTo(50, 34.5); g.lineTo(48, 31); g.closePath(); g.fill();
+g.shadowBlur = 0;
+g.strokeStyle = 'rgba(200,205,255,0.3)'; g.lineWidth = 1; g.beginPath(); g.moveTo(22, 40); g.bezierCurveTo(22, 20, 34, 8.6, 46, 6.6); g.stroke();
+};
+GEAR.goggles = function (g, s, t) {
+var ac = rgb(s.accent);
+shell(g, '#2f3a5c', 29.5, 70.5, 11, 39, 32);
+g.strokeStyle = 'rgba(190,205,255,0.35)'; g.lineWidth = 0.9; g.beginPath(); g.moveTo(34, 27); g.quadraticCurveTo(37.5, 17, 46, 14.2); g.stroke();
+g.strokeStyle = '#141826'; g.lineWidth = 3; g.beginPath(); g.moveTo(31, 42.6); g.lineTo(69, 42.6); g.stroke();
+for (var i = 0; i < 2; i++) {
+var cx = i ? 58.4 : 41.6;
+g.fillStyle = '#141826'; g.beginPath(); g.arc(cx, 42.8, 7.4, 0, TAU); g.fill();
+var lg = g.createRadialGradient(cx - 2, 40.6, 0.6, cx, 42.8, 6);
+lg.addColorStop(0, css(tone(ac, 0.6))); lg.addColorStop(0.6, css(ac, 0.85)); lg.addColorStop(1, css(mixc(ac, [10, 14, 30], 0.7)));
+g.fillStyle = lg; g.beginPath(); g.arc(cx, 42.8, 5.7, 0, TAU); g.fill();
+g.save(); g.beginPath(); g.arc(cx, 42.8, 5.7, 0, TAU); g.clip();
+var sw = (t * 10 + i * 9 + s.seed % 9) % 30 - 8;
+g.fillStyle = 'rgba(255,255,255,0.45)'; g.beginPath(); g.moveTo(cx - 9 + sw, 36); g.lineTo(cx - 6.6 + sw, 36); g.lineTo(cx - 10.6 + sw, 50); g.lineTo(cx - 13 + sw, 50); g.closePath(); g.fill();
+g.restore();
+g.strokeStyle = 'rgba(255,255,255,0.25)'; g.lineWidth = 0.6; g.beginPath(); g.arc(cx, 42.8, 7, 3.5, 5); g.stroke();
+}
+g.fillStyle = css(ac, 0.9); g.fillRect(48.8, 20, 2.4, 6);
+};
+GEAR.rebreather = function (g, s, t, talk) {
+var ac = rgb(s.accent);
+var grd = g.createLinearGradient(22, 6, 78, 70);
+grd.addColorStop(0, '#34406a'); grd.addColorStop(0.55, '#1e2444'); grd.addColorStop(1, '#0d1022');
+g.fillStyle = grd;
+g.beginPath(); g.moveTo(22, 78); g.bezierCurveTo(18, 30, 30, 7, 50, 7); g.bezierCurveTo(70, 7, 82, 30, 78, 78);
+g.lineTo(66.5, 66); g.bezierCurveTo(70.5, 44, 66, 30.5, 50, 30.5); g.bezierCurveTo(34, 30.5, 29.5, 44, 33.5, 66); g.closePath(); g.fill();
+g.strokeStyle = css(ac, 0.8); g.lineWidth = 0.9;
+g.beginPath(); g.moveTo(33.8, 64); g.bezierCurveTo(30.2, 44, 34.4, 31.3, 50, 31.3); g.bezierCurveTo(65.6, 31.3, 69.8, 44, 66.2, 64); g.stroke();
+g.strokeStyle = 'rgba(200,210,255,0.3)'; g.lineWidth = 1; g.beginPath(); g.moveTo(26.5, 38); g.bezierCurveTo(27, 22, 36, 12, 46, 10.4); g.stroke();
+var mg = g.createLinearGradient(38, 49, 62, 70);
+mg.addColorStop(0, '#4a5478'); mg.addColorStop(1, '#161a30');
+g.fillStyle = mg;
+g.beginPath(); g.moveTo(34.4, 50); g.quadraticCurveTo(50, 45.4, 65.6, 50); g.lineTo(63.6, 61.5); g.quadraticCurveTo(50, 72.6, 36.4, 61.5); g.closePath(); g.fill();
+g.strokeStyle = 'rgba(205,215,255,0.35)'; g.lineWidth = 0.7; g.beginPath(); g.moveTo(35.6, 50.6); g.quadraticCurveTo(50, 46.4, 60, 49); g.stroke();
+g.shadowColor = s.accent; g.shadowBlur = 5;
+for (var i = 0; i < 3; i++) {
+g.fillStyle = css(tone(ac, 0.2), 0.45 + 0.5 * (talk > 0.05 ? Math.abs(Math.sin(t * 13 + i * 1.3)) : 0.25 + 0.2 * Math.sin(t * 2 + i)));
+g.fillRect(39.6, 55 + i * 2.8, 5.6, 1.2); g.fillRect(54.8, 55 + i * 2.8, 5.6, 1.2);
+}
+g.shadowBlur = 0;
+g.fillStyle = '#0e1120'; g.beginPath(); g.arc(50, 58.4, 2.8, 0, TAU); g.fill();
+g.strokeStyle = css(ac, 0.7); g.lineWidth = 0.7; g.beginPath(); g.arc(50, 58.4, 2.8, 0, TAU); g.stroke();
+};
+function drone(g, s, t, talk) {
+var ac = rgb(s.accent), warden = s.faction === 'neutral';
+if (warden) ac = [255, 150, 70];
+var by = Math.sin(t * 1.7) * 1.6;
+g.save(); g.translate(0, by);
+var bg = g.createLinearGradient(20, 18, 80, 82);
+bg.addColorStop(0, warden ? '#8a7c62' : '#4c4a82'); bg.addColorStop(0.5, warden ? '#4e4536' : '#272650'); bg.addColorStop(1, '#0f0e20');
+g.fillStyle = bg;
+g.beginPath(); g.moveTo(50, 14); g.lineTo(78, 30); g.lineTo(82, 56); g.lineTo(64, 80); g.lineTo(36, 80); g.lineTo(18, 56); g.lineTo(22, 30); g.closePath(); g.fill();
+g.strokeStyle = 'rgba(210,215,255,0.35)'; g.lineWidth = 1; g.beginPath(); g.moveTo(22, 30); g.lineTo(50, 14); g.lineTo(64, 22); g.stroke();
+g.strokeStyle = css(ac, 0.8); g.lineWidth = 1.1; g.beginPath(); g.moveTo(78, 30); g.lineTo(82, 56); g.lineTo(64, 80); g.stroke();
+g.strokeStyle = 'rgba(8,8,20,0.6)'; g.lineWidth = 0.9;
+g.beginPath(); g.moveTo(50, 14); g.lineTo(50, 26); g.moveTo(22, 30); g.lineTo(34, 37); g.moveTo(78, 30); g.lineTo(66, 37); g.moveTo(36, 80); g.lineTo(41, 68); g.moveTo(64, 80); g.lineTo(59, 68); g.stroke();
+g.fillStyle = '#0a0b16'; g.beginPath(); g.arc(50, 47, 19, 0, TAU); g.fill();
+g.strokeStyle = css(ac, 0.5); g.lineWidth = 0.8; g.beginPath(); g.arc(50, 47, 19, 0, TAU); g.stroke();
+g.strokeStyle = css(ac, 0.9); g.lineWidth = 1.6; g.beginPath(); g.arc(50, 47, 16, t * 1.4, t * 1.4 + 1.5); g.stroke();
+g.beginPath(); g.arc(50, 47, 16, t * 1.4 + Math.PI, t * 1.4 + Math.PI + 1.5); g.stroke();
+var lx = Math.sin(t * 0.9 + s.seed % 5) * 3, ly = Math.cos(t * 0.7) * 1.6, ir = 9 + talk * 1.6 * Math.sin(t * 14) + 0.8 * Math.sin(t * 2.3);
+var ig = g.createRadialGradient(50 + lx, 47 + ly, 0.5, 50 + lx, 47 + ly, ir);
+ig.addColorStop(0, '#ffffff'); ig.addColorStop(0.25, css(tone(ac, 0.5))); ig.addColorStop(0.7, css(ac)); ig.addColorStop(1, css(mixc(ac, [8, 8, 24], 0.8)));
+g.shadowColor = css(ac); g.shadowBlur = 10; g.fillStyle = ig; g.beginPath(); g.arc(50 + lx, 47 + ly, ir, 0, TAU); g.fill(); g.shadowBlur = 0;
+g.fillStyle = '#05050c'; g.beginPath(); g.arc(50 + lx * 1.3, 47 + ly * 1.3, 3.2 - talk * 0.8 * Math.sin(t * 9), 0, TAU); g.fill();
+g.fillStyle = 'rgba(255,255,255,0.8)'; g.beginPath(); g.ellipse(44.5 + lx, 41.5 + ly, 3, 1.5, -0.6, 0, TAU); g.fill();
+for (var i = 0; i < 5; i++) {
+g.fillStyle = css(ac, 0.3 + 0.7 * (talk > 0.05 ? Math.abs(Math.sin(t * 11 + i * 1.7)) : (Math.sin(t * 2 + i) > 0.4 ? 0.6 : 0.1)));
+g.fillRect(40 + i * 4.4, 71.5, 2.6, 2.2);
+}
+g.fillStyle = css([255, 90, 74], Math.sin(t * 4) > 0 ? 0.95 : 0.25); g.beginPath(); g.arc(50, 20.5, 1.4, 0, TAU); g.fill();
+g.restore();
+}
+function overlay(g, s, t, talk, age) {
+var ac = rgb(s.accent), i;
+var vg = g.createRadialGradient(50, 46, 30, 50, 50, 74);
+vg.addColorStop(0, 'rgba(4,6,14,0)'); vg.addColorStop(1, 'rgba(4,6,14,0.72)');
+g.fillStyle = vg; g.fillRect(0, 0, 100, 100);
+g.fillStyle = 'rgba(0,0,0,0.13)';
+for (i = 0; i < 100; i += 2.5) g.fillRect(0, i, 100, 0.9);
+var band = (t * 26) % 150 - 25;
+var bgd = g.createLinearGradient(0, band - 10, 0, band + 10);
+bgd.addColorStop(0, css(ac, 0)); bgd.addColorStop(0.5, css(ac, 0.1)); bgd.addColorStop(1, css(ac, 0));
+g.fillStyle = bgd; g.fillRect(0, band - 10, 100, 20);
+if (talk > 0.05) {
+for (i = 0; i < 9; i++) {
+var h = (1.5 + 8 * Math.abs(Math.sin(t * (9 + i * 1.9) + i * 2.3)) * (0.4 + 0.6 * Math.abs(Math.sin(t * 3.1 + i)))) * talk;
+g.fillStyle = css(ac, 0.85); g.fillRect(70 + i * 2.9, 95 - h, 1.7, h);
+}
+}
+if (age !== undefined && age < 0.35) {
+var k = 1 - age / 0.35, fr = Math.floor(t * 30);
+for (i = 0; i < 7; i++) {
+var y = rnd(fr, i) * 100, hh = 1 + rnd(fr, i + 9) * 7 * k;
+g.fillStyle = rnd(fr, i + 20) > 0.5 ? css(ac, 0.35 * k) : 'rgba(255,255,255,' + (0.3 * k).toFixed(2) + ')';
+g.fillRect(0, y, 100, hh);
+}
+g.fillStyle = 'rgba(8,10,20,' + (0.55 * k * k).toFixed(2) + ')'; g.fillRect(0, 0, 100, 100);
+}
+g.strokeStyle = css(ac, 0.75); g.lineWidth = 1.2; g.lineCap = 'butt';
+g.beginPath(); g.moveTo(3, 12); g.lineTo(3, 3); g.lineTo(12, 3); g.moveTo(97, 88); g.lineTo(97, 97); g.lineTo(88, 97); g.stroke();
+}
+PT.draw = function (g, px, s, t, talk, age) {
+talk = talk || 0;
+var k = px / 100;
+g.setTransform(k, 0, 0, k, 0, 0);
+g.clearRect(0, 0, 100, 100);
+g.save(); g.beginPath(); g.rect(0, 0, 100, 100); g.clip();
+background(g, s, t);
+if (s.gear === 'drone') drone(g, s, t, talk);
+else {
+torso(g, s, t, talk);
+var ph = s.seed % 97;
+var bx = Math.sin(t * 0.7 + ph) * 0.9, by = Math.sin(t * 1.3 + ph * 2) * 0.7 + talk * Math.sin(t * 8.6) * 0.45;
+var rot = Math.sin(t * 0.5 + ph * 3) * 0.022 + talk * Math.sin(t * 3.7) * 0.014;
+var seg = Math.floor(t / 1.7 + ph), f = clamp((t / 1.7 + ph - seg) * 6, 0, 1); f = f * f * (3 - 2 * f);
+var look = [(rnd(s.seed, seg) - 0.5) * 1.6 * (1 - f) * 0 + ((rnd(s.seed, seg) - 0.5) * (1 - f) + (rnd(s.seed, seg + 1) - 0.5) * f) * 1.6,
+((rnd(s.seed, seg + 500) - 0.5) * (1 - f) + (rnd(s.seed, seg + 501) - 0.5) * f) * 1.2];
+var bt = (t + ph * 0.37) % (3.1 + (ph % 5) * 0.45), blink = bt < 0.16 ? Math.sin(bt / 0.16 * Math.PI) : 0;
+var mouth = talk * clamp(0.15 + 0.85 * Math.abs(Math.sin(t * 10.5 + ph) * Math.sin(t * 6.3 + 1.1)), 0, 1);
+var hideEyes = s.gear === 'pilot' || s.gear === 'helm' || s.gear === 'goggles';
+var hideMouth = s.gear === 'pilot' || s.gear === 'helm' || s.gear === 'rebreather';
+g.save(); g.translate(50 + bx, 66 + by); g.rotate(rot); g.translate(-50, -66);
+if (s.gear !== 'helm') {
+head(g, s, t, talk, look, blink, mouth, hideEyes, hideMouth);
+if (s.gear === 'cap' || s.gear === 'headset' || s.gear === 'hardhat') hair(g, s);
+}
+if (GEAR[s.gear]) GEAR[s.gear](g, s, t, talk);
+g.restore();
+}
+overlay(g, s, t, talk, age);
+g.restore();
+};
+PT.paint = function (canvas, spec, t, talk, age, px) {
+px = px || canvas.width || 128;
+if (canvas.width !== px) canvas.width = px;
+if (canvas.height !== px) canvas.height = px;
+var g = canvas.getContext('2d');
+if (!g) return;
+PT.draw(g, px, spec, t, talk, age);
+};
+PT.pokeAt = -10;
+PT.poke = function () { PT.pokeAt = performance.now() / 1000; };
+PT.size = function (cssPx) {
+var dpr = (typeof window !== 'undefined' && window.devicePixelRatio) || 1, k = (IV.ui && IV.ui.scale) || 1;
+return Math.max(64, Math.min(288, Math.round(cssPx * k * dpr)));
+};
+PT.animate = function (canvas, state) {
+if (canvas._ptRun) return;
+canvas._ptRun = true;
+var lastAt = 0, lastKey = null;
+function frame(ms) {
+var st = canvas.isConnected ? state() : null;
+if (!st) { canvas._ptRun = false; return; }
+requestAnimationFrame(frame);
+if (ms - lastAt < 30) return;
+lastAt = ms;
+var still = !!(IV.settings && IV.settings.reducedFx);
+if (still) { if (lastKey === st.spec.key) return; PT.paint(canvas, st.spec, 1.2, 0, 9, st.px); }
+else PT.paint(canvas, st.spec, ms / 1000, st.talk || 0, st.age, st.px);
+lastKey = st.spec.key;
+}
+requestAnimationFrame(frame);
 };
 })(window.IV = window.IV || {});
 </script>
@@ -49971,7 +50640,16 @@ var dur = m.dur > 0 ? m.dur : U.clamp(2.5 + String(m.text).length * 0.055, 4, 12
 radioName.textContent = m.speaker || (known ? known.name : ui.t('hud.radio', 'RADIO'));
 radioRole.textContent = m.role || (known ? known.role : '');
 radioText.textContent = m.text;
-H.drawPortrait(radioCanvas, m.portrait || m.key, m.speaker, faction ? faction.accent : null, Math.min(192, Math.round(64 * (ui.scale || 1) * (window.devicePixelRatio || 1))));
+if (IV.portraits) {
+var rSpec = IV.portraits.spec(m.portrait || m.key || 'radio', { name: m.speaker, accent: known || !faction ? null : faction.accent });
+var rAt = performance.now() / 1000, rTalk = Math.min(dur - 0.5, 0.9 + String(m.text).length * 0.05), rPx = IV.portraits.size(64);
+radioCanvas._ptSay = { spec: rSpec, at: rAt, talk: rTalk, px: rPx };
+IV.portraits.animate(radioCanvas, function () {
+var q = radioCanvas._ptSay, age = performance.now() / 1000 - q.at;
+if (radioEl.hidden) return null;
+return { spec: q.spec, px: q.px, age: age, talk: age < q.talk ? Math.min(1, age * 5, (q.talk - age) * 4) : 0 };
+});
+} else H.drawPortrait(radioCanvas, m.portrait || m.key, m.speaker, faction ? faction.accent : null, Math.min(192, Math.round(64 * (ui.scale || 1) * (window.devicePixelRatio || 1))));
 radioEl.style.setProperty('--dur', dur + 's');
 radioFlip = !radioFlip;
 radioEl.classList.toggle('is-a', radioFlip);
@@ -51919,6 +52597,29 @@ ui.tooltip(c.el, function () { return cmdTip(c); }, { place: 'top' });
 cmdsEl.appendChild(c.el);
 });
 function cmd(id) { for (var i = 0; i < CMDS.length; i++) if (CMDS[i].id === id) return CMDS[i]; return null; }
+var crewCanvas = el('canvas.hud-crew__face', { width: 192, height: 192 });
+var crewName = el('span.hud-crew__name');
+var crewEl = el('div.hud-crew', { hidden: true }, [el('span.hud-crew__frame', crewCanvas), crewName]);
+crewEl._v = false;
+var crew = { type: null, spec: null, at: 0, px: 192 };
+function bindCrew(u) {
+D.show(crewEl, !!u && !!IV.portraits);
+if (!u || !IV.portraits) { crew.type = null; return; }
+var nowS = performance.now() / 1000;
+if (crew.type !== u.type) {
+crew.type = u.type;
+crew.spec = IV.portraits.spec(u.def.model || u.type, { faction: u.def.faction });
+crew.at = nowS;
+crew.px = IV.portraits.size(84);
+D.txt(crewName, u.def.name);
+}
+IV.portraits.animate(crewCanvas, function () {
+if (crewEl.hidden || !crew.spec) return null;
+var t = performance.now() / 1000, age = t - crew.at, said = t - Math.max(crew.at, IV.portraits.pokeAt), len = 0.85;
+return { spec: crew.spec, px: crew.px, age: age, talk: said < len ? Math.min(1, said * 6, (len - said) * 5) : 0 };
+});
+}
+selEl.appendChild(crewEl);
 selEl.appendChild(el('div.hud-sel__main', [cardEl, groupsEl]));
 selEl.appendChild(cmdsEl);
 var tbEl = el('div.hud-tb', { hidden: true });
@@ -52061,6 +52762,7 @@ groups.length = 0;
 byKey = {};
 total = 0;
 single = null;
+var lead = null;
 caps.units = caps.structs = caps.complete = caps.sellable = 0;
 caps.armed = caps.deploy = caps.produce = false;
 caps.blueprint = caps.superSt = null;
@@ -52072,6 +52774,7 @@ if (!e || !e.alive || (e.kind !== 'unit' && e.kind !== 'structure') || !visibleT
 sel[kept++] = sel[i];
 total++;
 single = e;
+if (!lead && e.kind === 'unit') lead = e;
 var key = e.type + '|' + e.owner;
 var g = byKey[key];
 if (!g) {
@@ -52103,6 +52806,7 @@ if (!shown) setCardOpen(false);
 D.show(selEl, shown);
 D.show(cardEl, total === 1);
 D.show(groupsEl, total > 1);
+bindCrew(lead);
 if (total === 1) bindCard(single);
 else if (total > 1) bindGroups();
 bindCommands();
@@ -53437,6 +54141,19 @@ current = m;
 refs.pg.kicker.textContent = missionKicker(m) || T.kBriefing;
 refs.pg.title.textContent = m.title;
 refs.loc.textContent = m.location || '';
+var who = m.campaign === 'concord' ? 'solenne' : (m.campaign === 'tutorial' ? 'kite' : 'brandt');
+var adv = S('campaign.advisers.' + who, null) || {};
+refs.officer.hidden = !IV.portraits;
+if (IV.portraits) {
+refs.offName.textContent = adv.name || '';
+refs.offRole.textContent = adv.role || '';
+var bSay = refs.face._ptSay = { spec: IV.portraits.spec(who), at: performance.now() / 1000, px: IV.portraits.size(104) };
+IV.portraits.animate(refs.face, function () {
+var q = refs.face._ptSay, age = performance.now() / 1000 - q.at;
+if (!ui.isOpen('briefing')) return null;
+return { spec: q.spec, px: q.px, age: age, talk: age < 6 ? Math.min(1, age * 4, (6 - age) * 2) : 0 };
+});
+}
 refs.text.textContent = '';
 (m.briefing || []).forEach(function (para) { refs.text.appendChild(el('p', para)); });
 var shown = missionObjectives(m);
@@ -53488,9 +54205,13 @@ refs.loc = el('span');
 refs.text = el('div.bf-text');
 refs.objs = el('ul.ob-list');
 refs.objWrap = el('div.bf-objs', [el('h3.bf-sub', S('briefing.objectives', 'Objectives')), refs.objs]);
+refs.face = el('canvas.bf-officer__face', { width: 208, height: 208 });
+refs.offName = el('span.bf-officer__name');
+refs.offRole = el('span.bf-officer__role');
+refs.officer = el('div.bf-officer', [el('span.bf-officer__frame', refs.face), el('div.bf-officer__text', [el('span.label', 'Briefing officer'), refs.offName, refs.offRole])]);
 refs.brief = ui.panel({
 className: 'bf-brief',
-body: [el('div.bf-loc', [ui.icon('pin', 16), el('span.label', S('briefing.location', 'Location')), refs.loc]), refs.text, refs.objWrap]
+body: [refs.officer, el('div.bf-loc', [ui.icon('pin', 16), el('span.label', S('briefing.location', 'Location')), refs.loc]), refs.text, refs.objWrap]
 });
 refs.canvas = el('canvas.bf-map__canvas', { width: 8, height: 8, role: 'img', 'aria-label': T.mapSketch });
 refs.wellNote = el('span.bf-map__note');
