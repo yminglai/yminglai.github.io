@@ -30752,7 +30752,7 @@ return api;
 var gfx = IV.gfx = IV.gfx || {};
 var lib = gfx.fxlib = gfx.fxlib || {};
 lib.parts = lib.parts || [];
-if (IV.settings && IV.settings.define) { IV.settings.define('flash', 1); IV.settings.define('trackpad', 'auto', ['auto', 'pan', 'zoom']); }
+if (IV.settings && IV.settings.define) { IV.settings.define('flash', 1); IV.settings.define('trackpad', 'auto', ['auto', 'pan', 'zoom']); IV.settings.define('speech', true); }
 var QUALITY = {
 low:    { sprites: 600,  spritesDyn: 96,  debris: 80,  segs: 192, segsDyn: 96,  stains: 80,  lights: 64,  shields: 16, wrecks: 12, emitters: 24, rate: 0.5 },
 medium: { sprites: 1500, spritesDyn: 160, debris: 192, segs: 320, segsDyn: 160, stains: 176, lights: 96,  shields: 32, wrecks: 24, emitters: 48, rate: 0.75 },
@@ -47608,7 +47608,7 @@ setSelection(keep, 'prune');
 function selectFeedback() {
 if (!sel.length) return;
 sfx('ui_select');
-if (cap.units.length) { call(director(), 'ack', unitIds(), 'select'); if (IV.portraits) IV.portraits.poke(); }
+if (cap.units.length) { call(director(), 'ack', unitIds(), 'select'); if (IV.portraits) IV.portraits.poke('select'); }
 }
 function selectType(ent, add) {
 var g = gfx(), list = null, c = canvas;
@@ -47831,7 +47831,7 @@ function feedback(kind, x, z, ids) {
 var m = MARK[kind];
 if (m) call(effects(), 'marker', x, z, m);
 sfx('ui_command');
-if (ids && ids.length && ACK[kind]) { call(director(), 'ack', ids, ACK[kind]); if (IV.portraits) IV.portraits.poke(); }
+if (ids && ids.length && ACK[kind]) { call(director(), 'ack', ids, ACK[kind]); if (IV.portraits) IV.portraits.poke(ACK[kind]); }
 if (lastInput.touch) ringAt(lastInput.sx, lastInput.sy, m || 'move');
 }
 function split(fn, target, rest) {
@@ -48991,7 +48991,7 @@ lastInput.touch = false;
 switch (type) {
 case 'stop': case 'scatter':
 if (!ids.length || !send({ type: type, ids: ids })) return false;
-sfx('ui_command'); call(director(), 'ack', ids, type); if (IV.portraits) IV.portraits.poke();
+sfx('ui_command'); call(director(), 'ack', ids, type); if (IV.portraits) IV.portraits.poke(type);
 return true;
 case 'deploy': return deployOrder();
 case 'holdFire': return setStance(currentStance() === 'hold' ? 'aggressive' : 'hold');
@@ -49326,7 +49326,7 @@ function rgb(hex) { var n = parseInt(hex.slice(1), 16); return [(n >> 16) & 255,
 function css(c, a) { return 'rgba(' + Math.round(c[0]) + ',' + Math.round(c[1]) + ',' + Math.round(c[2]) + ',' + (a === undefined ? 1 : a) + ')'; }
 function mixc(a, b, k) { return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k]; }
 function tone(c, k) { return k >= 0 ? mixc(c, [255, 255, 255], k) : mixc(c, [0, 0, 0], -k); }
-var CELL = 96, COLS = 4;
+var CELL = 192, COLS = 4;
 var SHEETS = [], loaded = 0;
 ['faces_1.png', 'faces_2.png', 'faces_3.png'].forEach(function (name, i) {
 if (typeof Image === 'undefined') return;
@@ -49347,6 +49347,7 @@ c_tank: 2, c_heavy: 17, c_arty: 8, c_aa: 13, c_mcv: 2, c_fighter: 5, c_gunship: 
 u_technician: 3, u_shade: 15, u_veil: 11, u_arclancer: 6, u_drone: 14, u_skiff: 7, u_phantom: 15,
 u_storm: 12, u_tank: 0, u_aa: 7, u_arty: 6, u_harvester: 3, u_mcv: 0, u_fighter: 12
 };
+var FLIP = { c_scout: 1, c_harvester: 1, c_mcv: 1, c_aa: 1, c_arty: 1, c_fighter: 1, u_phantom: 1, u_mcv: 1, u_aa: 1, u_arty: 1, u_harvester: 1, u_fighter: 1 };
 var POOL = { combine: [2, 13, 9, 8, 5, 17, 16, 19], concord: [15, 11, 6, 3, 0, 7, 12], neutral: [20] };
 var ACCENT = { combine: '#ffb347', concord: '#4fe3ff', neutral: '#d9cfae' };
 PT.spec = function (key, opts) {
@@ -49357,7 +49358,7 @@ var faction = base ? base.faction : (opts.faction || (/^u_|concord/.test(key) ? 
 if (!POOL[faction]) faction = 'combine';
 var pool = POOL[faction], face = base ? base.face : (FACES[key] !== undefined ? FACES[key] : pool[seed % pool.length]);
 return {
-key: key, seed: seed, faction: faction, face: face,
+key: key, seed: seed, faction: faction, face: face, flip: !base && (FLIP[key] || (FACES[key] === undefined && seed % 2 === 1)) ? -1 : 1,
 bg: base ? base.bg : (/rifleman|lancer|marksman|flame|shade|veil|arclancer|engineer|technician/.test(key) || key === 'combine' || key === 'concord' ? 'field' : 'cockpit'),
 accent: opts.accent || ACCENT[faction]
 };
@@ -49398,18 +49399,33 @@ var glow = g.createRadialGradient(50, 40, 4, 50, 40, 62);
 glow.addColorStop(0, css(ac, 0.3)); glow.addColorStop(1, css(ac, 0));
 g.fillStyle = glow; g.fillRect(0, 0, 100, 100);
 }
-function figure(g, s, t, talk) {
+var stage = null;
+function figure(g, s, t, talk, px) {
 var im = SHEETS[Math.floor(s.face / 8)];
 if (!im || !im.ready) return;
-var i = s.face % 8, sx = (i % COLS) * CELL, sy = Math.floor(i / COLS) * CELL, ph = s.seed % 97;
+var i = s.face % 8, sx = (i % COLS) * CELL, sy = Math.floor(i / COLS) * CELL, ph = s.seed % 97, ac = rgb(s.accent);
+if (!stage) stage = document.createElement('canvas');
+if (stage.width !== px || stage.height !== px) { stage.width = px; stage.height = px; }
+var h = stage.getContext('2d'), q = px / 100;
+h.setTransform(q, 0, 0, q, 0, 0);
+h.globalCompositeOperation = 'source-over';
+h.clearRect(0, 0, 100, 100);
+h.imageSmoothingEnabled = true; h.imageSmoothingQuality = 'high';
+h.save(); h.translate(50, 0); h.scale(s.flip, 1); h.drawImage(im, sx, sy, CELL, CELL, -50, 0, 100, 100); h.restore();
+h.globalCompositeOperation = 'source-atop';
+var grade = h.createLinearGradient(0, 0, 100, 100);
+if (s.faction === 'concord') { grade.addColorStop(0, 'rgba(70,120,255,0.20)'); grade.addColorStop(1, 'rgba(10,20,70,0.40)'); }
+else if (s.faction === 'neutral') { grade.addColorStop(0, 'rgba(230,210,160,0.14)'); grade.addColorStop(1, 'rgba(40,30,20,0.36)'); }
+else { grade.addColorStop(0, 'rgba(255,170,80,0.16)'); grade.addColorStop(1, 'rgba(50,20,40,0.36)'); }
+h.fillStyle = grade; h.fillRect(0, 0, 100, 100);
 var bx = Math.sin(t * 0.7 + ph) * 1.1, by = Math.sin(t * 1.3 + ph * 2) * 0.9 + talk * Math.sin(t * 9.2) * 0.9;
 var rot = Math.sin(t * 0.5 + ph * 3) * 0.018 + talk * Math.sin(t * 4.3) * 0.016;
-var k = 1.07 + Math.sin(t * 1.3 + ph) * 0.008 + talk * 0.012 * Math.abs(Math.sin(t * 6.1));
+var k = 1.04 + Math.sin(t * 1.3 + ph) * 0.008 + talk * 0.012 * Math.abs(Math.sin(t * 6.1));
 g.save();
 g.translate(50 + bx, 100 + by); g.rotate(rot); g.scale(k, k);
 g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
-g.shadowColor = 'rgba(0,0,0,0.55)'; g.shadowBlur = 6;
-g.drawImage(im, sx, sy, CELL, CELL, -50, -98, 100, 100);
+g.shadowColor = css(ac, 0.9); g.shadowBlur = 5; g.shadowOffsetX = 1.2 * (px / 100); g.shadowOffsetY = -0.6 * (px / 100);
+g.drawImage(stage, 0, 0, px, px, -50, -98, 100, 100);
 g.restore();
 }
 function overlay(g, s, t, talk, age) {
@@ -49448,7 +49464,7 @@ g.setTransform(k, 0, 0, k, 0, 0);
 g.clearRect(0, 0, 100, 100);
 g.save(); g.beginPath(); g.rect(0, 0, 100, 100); g.clip();
 background(g, s, t);
-figure(g, s, t, talk);
+figure(g, s, t, talk, px);
 overlay(g, s, t, talk, age);
 g.restore();
 };
@@ -49460,8 +49476,88 @@ var g = canvas.getContext('2d');
 if (!g) return;
 PT.draw(g, px, spec, t, talk, age);
 };
+/* ---- spoken lines (browser speech synthesis) ---- */
+var LINES = {
+2:  { g: 'm', pitch: 0.7, rate: 0.95, select: ['Armor ready.', 'Go ahead, command.', 'Crew is awake.'], move: ['Rolling.', 'On the move.', 'Tracks turning.'], attack: ['Target sighted.', 'Loading. Firing.', 'We will flatten it.'] },
+13: { g: 'm', pitch: 1.0, rate: 1.08, select: ['Rifles ready.', 'Sir.', 'Standing by.'], move: ['Moving.', 'Double time.', 'On it.'], attack: ['Engaging.', 'Open fire.', 'Contact front.'] },
+9:  { g: 'f', pitch: 1.15, rate: 1.08, select: ['Lancer here.', 'Make it quick.', 'What is the target?'], move: ['Got it.', 'Moving up.', 'Fine, going.'], attack: ['I have the shot.', 'Lighting them up.', 'Lance away.'] },
+8:  { g: 'm', pitch: 0.85, rate: 0.9, select: ['You rang?', 'Good view from here.', 'Say when.'], move: ['Taking my time.', 'Relocating.', 'Nice and slow.'], attack: ['Easy money.', 'Range is good.', 'Sending it.'] },
+5:  { g: 'm', pitch: 0.6, rate: 0.95, select: ['Mask on.', 'Systems hot.', 'Ready to burn.'], move: ['Copy.', 'Vectoring.', 'Proceeding.'], attack: ['Burning it down.', 'Weapons free.', 'Lighting up.'] },
+16: { g: 'm', pitch: 0.9, rate: 1.0, select: ['Tools ready.', 'What is broken?', 'Engineer here.'], move: ['On my way.', 'Hauling.', 'Heading over.'], attack: ['Not my job, but fine.', 'If you insist.'] },
+17: { g: 'm', pitch: 0.5, rate: 0.85, select: ['Heavy is here.', 'Big guns ready.', 'Point me at it.'], move: ['Slow and sure.', 'Moving the mountain.', 'Coming through.'], attack: ['Crushing it.', 'With pleasure.', 'Nothing left.'] },
+19: { g: 'm', pitch: 0.8, rate: 1.1, select: ['Gunship up.', 'Eyes on.', 'Rotors hot.'], move: ['Banking.', 'En route.', 'Wilco.'], attack: ['Guns, guns, guns.', 'Rolling in.', 'Tally target.'] },
+3:  { g: 'f', pitch: 1.2, rate: 1.0, select: ['Technician.', 'Quietly, please.', 'I am listening.'], move: ['Going.', 'Under way.', 'As you say.'], attack: ['If I must.', 'Marked.'] },
+15: { g: 'm', pitch: 0.65, rate: 0.88, select: ['From the dark.', 'Unseen.', 'Speak.'], move: ['Like a shadow.', 'Moving.', 'No one will know.'], attack: ['They will not see it.', 'Striking.', 'Now they sleep.'] },
+11: { g: 'm', pitch: 0.75, rate: 0.9, select: ['Veil ready.', 'Breathing easy.', 'Yes.'], move: ['Drifting.', 'On the wind.', 'Going quiet.'], attack: ['Fading them out.', 'Now.', 'Lights out.'] },
+6:  { g: 'f', pitch: 1.0, rate: 0.98, select: ['Arc is charged.', 'Ready.', 'Name it.'], move: ['Shifting.', 'Understood.', 'Repositioning.'], attack: ['Arc out.', 'Burn bright.', 'Discharging.'] },
+14: { g: 'm', pitch: 0.2, rate: 0.82, select: ['Unit online.', 'Awaiting input.', 'Query.'], move: ['Path set.', 'Complying.', 'Routing.'], attack: ['Target locked.', 'Executing.', 'Threat confirmed.'] },
+7:  { g: 'f', pitch: 1.25, rate: 1.12, select: ['Skiff here.', 'Fast and light.', 'Go on.'], move: ['Skimming.', 'Flying low.', 'Already gone.'], attack: ['Running them down.', 'On them.', 'Strafing.'] },
+12: { g: 'f', pitch: 0.95, rate: 1.05, select: ['Storm wing.', 'The sky is ours.', 'Ready.'], move: ['Climbing.', 'Wheeling.', 'New heading.'], attack: ['Diving.', 'Thunder away.', 'Breaking them.'] },
+0:  { g: 'f', pitch: 1.05, rate: 0.95, select: ['Night armor.', 'We hear you.', 'Standing ready.'], move: ['Advancing.', 'Rolling quiet.', 'Forward.'], attack: ['Breaking them.', 'Firing.', 'Target is ours.'] },
+4:  { g: 'f', pitch: 0.9, rate: 0.97 }, 1: { g: 'm', pitch: 0.95, rate: 1.05 }, 18: { g: 'f', pitch: 1.1, rate: 0.9 }, 10: { g: 'm', pitch: 1.05, rate: 1.08 }
+};
+var KIND = { select: 'select', attack: 'attack', attackMove: 'attack' };
+var FEM = /female|woman|samantha|victoria|karen|zira|susan|moira|tessa|fiona|allison|ava|kate|serena|aria|jenny|michelle|hazel|catherine|libby|sonia|natasha/i;
+var MALE = /\bmale\b|daniel|alex\b|david|mark\b|fred|tom\b|george|james|oliver|aaron|arthur|guy|ryan|eric|brian|thomas|rishi|lee\b|evan|nathan/i;
+var synth = typeof window !== 'undefined' && window.speechSynthesis ? window.speechSynthesis : null;
+var voices = [], speakingUntil = 0, radioUtter = null, radioAt = 0, lastLine = {}, lastSay = 0;
+function loadVoices() { try { voices = (synth.getVoices() || []).filter(function (v) { return /^en/i.test(v.lang); }); } catch (e) { voices = []; } }
+if (synth) { loadVoices(); try { synth.addEventListener('voiceschanged', loadVoices); } catch (e) { } }
+function voiceFor(spec, L) {
+if (!voices.length) return null;
+var want = L && L.g === 'f' ? FEM : MALE, other = L && L.g === 'f' ? MALE : FEM;
+var pool = voices.filter(function (v) { return want.test(v.name); });
+if (!pool.length) pool = voices.filter(function (v) { return !other.test(v.name); });
+if (!pool.length) pool = voices;
+return pool[(spec.face * 7 + 3) % pool.length];
+}
+function loudness() {
+var S = IV.settings || {};
+if (S.mute || S.speech === false) return 0;
+var v = (typeof S.voice === 'number' ? S.voice : 1) * (typeof S.master === 'number' ? S.master : 1);
+return v > 1 ? 1 : v;
+}
+PT.canSpeak = function () { return !!synth && loudness() > 0.01; };
+PT.speak = function (spec, text, opts) {
+opts = opts || {};
+if (!synth || !text || !spec) return false;
+var vol = loudness();
+if (vol <= 0.01) return false;
+var L = LINES[spec.face] || {}, u;
+try {
+u = new SpeechSynthesisUtterance(String(text));
+var v = voiceFor(spec, L);
+if (v) { u.voice = v; u.lang = v.lang; } else u.lang = 'en-US';
+u.pitch = clamp(L.pitch === undefined ? 1 : L.pitch, 0.1, 2);
+u.rate = clamp(L.rate === undefined ? 1 : L.rate, 0.6, 1.4);
+u.volume = vol;
+u.onstart = function () { speakingUntil = performance.now() / 1000 + 30; PT.pokeAt = performance.now() / 1000; if (opts.onstart) opts.onstart(); };
+u.onend = u.onerror = function () { speakingUntil = 0; if (radioUtter === u) radioUtter = null; if (opts.onend) opts.onend(); };
+synth.cancel();
+if (opts.radio) { radioUtter = u; radioAt = performance.now() / 1000; } else radioUtter = null;
+synth.speak(u);
+} catch (e) { return false; }
+return true;
+};
+PT.hush = function () { try { if (synth) synth.cancel(); } catch (e) { } speakingUntil = 0; radioUtter = null; };
+PT.speaking = function () { return performance.now() / 1000 < speakingUntil; };
+PT.radioBusy = function () { return !!radioUtter && performance.now() / 1000 - radioAt < 16; };
+PT.lead = null;
 PT.pokeAt = -10;
-PT.poke = function () { PT.pokeAt = performance.now() / 1000; };
+PT.poke = function (kind) {
+PT.pokeAt = performance.now() / 1000;
+if (!PT.canSpeak()) return;
+setTimeout(function () {
+var spec = PT.lead, now = performance.now() / 1000;
+if (!spec || PT.radioBusy() || now - lastSay < (kind === 'select' ? 1.6 : 0.9)) return;
+var L = LINES[spec.face], set = L && (L[KIND[kind] || 'move'] || L.move);
+if (!set || !set.length) return;
+var k = spec.face + ':' + (KIND[kind] || 'move'), i = Math.floor(Math.random() * set.length);
+if (set.length > 1 && i === lastLine[k]) i = (i + 1) % set.length;
+lastLine[k] = i; lastSay = now;
+PT.speak(spec, set[i]);
+}, 70);
+};
 PT.size = function (cssPx) {
 var dpr = (typeof window !== 'undefined' && window.devicePixelRatio) || 1, k = (IV.ui && IV.ui.scale) || 1;
 return Math.max(64, Math.min(288, Math.round(cssPx * k * dpr)));
@@ -50200,7 +50296,7 @@ el('div.hud-radio__col', [el('div.hud-radio__head', [radioName, radioRole]), rad
 radioDrain
 ]);
 ui.tooltip(radioEl, function () { return ctx.tw(T, 'radioDismiss'); }, { place: 'bottom', hold: false });
-radioEl.addEventListener('click', function () { radioLeft = 0; ctx.blur(); });
+radioEl.addEventListener('click', function () { radioLeft = 0; if (IV.portraits) IV.portraits.hush(); ctx.blur(); });
 centerEl.appendChild(radioEl);
 var radioQueue = [];
 var radioLeft = 0;
@@ -50225,10 +50321,11 @@ if (IV.portraits) {
 var rSpec = IV.portraits.spec(m.portrait || m.key || 'radio', { name: m.speaker, accent: known || !faction ? null : faction.accent });
 var rAt = performance.now() / 1000, rTalk = Math.min(dur - 0.5, 0.9 + String(m.text).length * 0.05), rPx = IV.portraits.size(64);
 radioCanvas._ptSay = { spec: rSpec, at: rAt, talk: rTalk, px: rPx };
+IV.portraits.speak(rSpec, m.text, { radio: true });
 IV.portraits.animate(radioCanvas, function () {
 var q = radioCanvas._ptSay, age = performance.now() / 1000 - q.at;
 if (radioEl.hidden) return null;
-return { spec: q.spec, px: q.px, age: age, talk: age < q.talk ? Math.min(1, age * 5, (q.talk - age) * 4) : 0 };
+return { spec: q.spec, px: q.px, age: age, talk: IV.portraits.radioBusy() ? 1 : (age < q.talk ? Math.min(1, age * 5, (q.talk - age) * 4) : 0) };
 });
 } else H.drawPortrait(radioCanvas, m.portrait || m.key, m.speaker, faction ? faction.accent : null, Math.min(192, Math.round(64 * (ui.scale || 1) * (window.devicePixelRatio || 1))));
 radioEl.style.setProperty('--dur', dur + 's');
@@ -50967,7 +51064,7 @@ if (fundsFlash > 0) { fundsFlash -= dt; D.cls(statHelion, 'is-short', fundsFlash
 }
 ageFeed(dt);
 if (ctx.alert.fresh > 0) ctx.alert.fresh -= dt;
-if (radioOn) { radioLeft -= dt; if (radioLeft <= 0) nextMessage(); }
+if (radioOn) { radioLeft -= dt; if (radioLeft <= 0 && !(IV.portraits && IV.portraits.radioBusy())) nextMessage(); }
 if (bannerLeft > 0) { bannerLeft -= dt; if (bannerLeft <= 0) { bannerEl.hidden = true; scheduleInsets(); } }
 if (overLeft >= 0) { overLeft -= dt; if (overLeft < 0) handOver(); }
 var ticked = sim.tick !== lastTick;
@@ -52185,6 +52282,7 @@ crewEl._v = false;
 var crew = { type: null, spec: null, at: 0, px: 192 };
 function bindCrew(u) {
 D.show(crewEl, !!u && !!IV.portraits);
+if (IV.portraits) IV.portraits.lead = u && u.owner === pid && !spectator ? IV.portraits.spec(u.def.model || u.type, { faction: u.def.faction }) : null;
 if (!u || !IV.portraits) { crew.type = null; return; }
 var nowS = performance.now() / 1000;
 if (crew.type !== u.type) {
@@ -52197,7 +52295,7 @@ D.txt(crewName, u.def.name);
 IV.portraits.animate(crewCanvas, function () {
 if (crewEl.hidden || !crew.spec) return null;
 var t = performance.now() / 1000, age = t - crew.at, said = t - Math.max(crew.at, IV.portraits.pokeAt), len = 0.85;
-return { spec: crew.spec, px: crew.px, age: age, talk: said < len ? Math.min(1, said * 6, (len - said) * 5) : 0 };
+return { spec: crew.spec, px: crew.px, age: age, talk: IV.portraits.speaking() && !IV.portraits.radioBusy() ? 1 : (said < len ? Math.min(1, said * 6, (len - said) * 5) : 0) };
 });
 }
 selEl.appendChild(crewEl);
@@ -53735,8 +53833,9 @@ var bSay = refs.face._ptSay = { spec: IV.portraits.spec(who), at: performance.no
 IV.portraits.animate(refs.face, function () {
 var q = refs.face._ptSay, age = performance.now() / 1000 - q.at;
 if (!ui.isOpen('briefing')) return null;
-return { spec: q.spec, px: q.px, age: age, talk: age < 6 ? Math.min(1, age * 4, (6 - age) * 2) : 0 };
+return { spec: q.spec, px: q.px, age: age, talk: IV.portraits.speaking() ? 1 : (age < 1.2 ? Math.min(1, age * 4, (1.2 - age) * 4) : 0) };
 });
+if (m.briefing && m.briefing[0]) IV.portraits.speak(bSay.spec, m.briefing[0]);
 }
 refs.text.textContent = '';
 (m.briefing || []).forEach(function (para) { refs.text.appendChild(el('p', para)); });
@@ -53841,7 +53940,7 @@ return;
 }
 fill(m);
 },
-close: function () { token++; }
+close: function () { token++; if (IV.portraits) IV.portraits.hush(); }
 });
 })();
 (function () {
@@ -54223,6 +54322,7 @@ controls.sfx.set(s.sfx, true);
 controls.music.set(s.music, true);
 controls.voice.set(typeof s.voice === 'number' ? s.voice : 1, true);
 controls.mute.set(s.mute === true, true);
+controls.speech.set(s.speech !== false, true);
 controls.edgeScroll.set(!!s.edgeScroll, true);
 controls.camSpeed.set(s.camSpeed, true);
 controls.trackpad.set(s.trackpad === 'pan' || s.trackpad === 'zoom' ? s.trackpad : 'auto', true);
@@ -54277,6 +54377,7 @@ controls.sfx = vol('sfx', S('options.sfx', 'Effects'));
 controls.music = vol('music', S('options.music', 'Music'));
 controls.voice = vol('voice', T.voice);
 controls.mute = ui.toggle({ label: T.mute, onChange: function (v) { setting('mute', v); } });
+controls.speech = ui.toggle({ label: 'Spoken voices', onChange: function (v) { setting('speech', v); if (!v && IV.portraits) IV.portraits.hush(); } });
 controls.edgeScroll = ui.toggle({ label: S('options.edgeScroll', 'Edge scrolling'), onChange: function (v) { setting('edgeScroll', v); } });
 controls.trackpad = ui.segmented({
 options: [{ value: 'auto', label: 'Auto' }, { value: 'pan', label: 'Pan' }, { value: 'zoom', label: 'Zoom' }],
@@ -54303,6 +54404,7 @@ f(S('options.master', 'Master volume'), null, controls.master),
 f(S('options.sfx', 'Effects'), null, controls.sfx),
 f(S('options.music', 'Music'), null, controls.music),
 f(T.voice, T.voiceTip, controls.voice),
+f('Spoken voices', 'Units, radio messages and briefings are read aloud by your browser\'s speech voices.', controls.speech, true),
 f(T.mute, null, controls.mute, true)
 ]
 });
@@ -56603,6 +56705,7 @@ function str(path, fallback) { return IV.ui && IV.ui.t ? IV.ui.t(path, fallback)
 function reduced() { return IV.ui && IV.ui.reducedMotion ? IV.ui.reducedMotion() : IV.env.reducedMotion(); }
 function shellUI() { return IV.shellUI || {}; }
 function setMode(to) {
+if (to !== 'play' && IV.portraits && IV.portraits.hush) IV.portraits.hush();
 if (to === mode) return;
 var from = mode;
 mode = to;
