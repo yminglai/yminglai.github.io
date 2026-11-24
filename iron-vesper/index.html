@@ -48444,7 +48444,7 @@ release(e);
 dropGestures();
 }
 function onPointerLeave(e) { if (e.pointerType !== 'touch') ptr.over = false; }
-var pad = { until: 0, zoomAt: 0, panAt: 0, gs: 1, gr: 0, turning: false };
+var pad = { until: 0, zoomAt: 0, panAt: 0, pinchAt: 0, gs: 1, gr: 0, turning: false };
 function padSetting() { var v = IV.settings && IV.settings.trackpad; return v === 'pan' || v === 'zoom' ? v : 'auto'; }
 function fromTrackpad(e) {
 var m = padSetting();
@@ -48471,7 +48471,7 @@ dy = U.clamp(dy, -60, 60);
 if (!dy) return;
 pad.until = now() + 0.7;
 c.zoomBy(Math.exp(dy * 0.011), sx, sy);
-pad.zoomAt = now();
+pad.zoomAt = pad.pinchAt = now();
 return;
 }
 var isPad = fromTrackpad(e);
@@ -48484,6 +48484,7 @@ flag('camera_rotate');
 return;
 }
 if (isPad && !e.shiftKey) {
+if (now() - pad.pinchAt < 0.2) return;
 dx = U.clamp(dx, -160, 160); dy = U.clamp(dy, -160, 160);
 if (!dx && !dy) return;
 var k = 1.15 * camSpeed();
@@ -48497,6 +48498,16 @@ dy = U.clamp(dy, -240, 240);
 if (!dy) return;
 c.zoomBy(Math.pow(TUNE.wheel, dy), sx, sy);
 flag('camera_zoom');
+}
+function onWinWheel(e) {
+if (e.target === canvas || !e.ctrlKey || ptr.ctrl || !active()) return;
+var c = cam();
+if (!c) return;
+var dy = U.clamp(e.deltaY * (e.deltaMode === 1 ? 16 : 1), -60, 60);
+if (!dy) return;
+pad.until = now() + 0.7;
+c.zoomBy(Math.exp(dy * 0.011));
+pad.zoomAt = pad.pinchAt = now();
 }
 function onGestureStart(e) {
 e.preventDefault();
@@ -48841,6 +48852,7 @@ on(canvas, 'pointerup', onPointerUp);
 on(canvas, 'pointercancel', onPointerCancel);
 on(canvas, 'pointerleave', onPointerLeave);
 on(canvas, 'wheel', onWheel, { passive: false });
+on(window, 'wheel', onWinWheel, { capture: true, passive: true });
 on(canvas, 'gesturestart', onGestureStart, { passive: false });
 on(canvas, 'gesturechange', onGestureChange, { passive: false });
 on(canvas, 'gestureend', onGestureEnd, { passive: false });
@@ -56435,6 +56447,11 @@ if (e.key && e.key.length === 1 && e.key !== ' ') e.preventDefault();
 ['gesturestart', 'gesturechange'].forEach(function (name) {
 document.addEventListener(name, function (e) { e.preventDefault(); }, { passive: false });
 });
+var ctrlHeld = false;
+window.addEventListener('keydown', function (e) { if (e.key === 'Control') ctrlHeld = true; }, true);
+window.addEventListener('keyup', function (e) { if (e.key === 'Control') ctrlHeld = false; }, true);
+window.addEventListener('blur', function () { ctrlHeld = false; });
+window.addEventListener('wheel', function (e) { if (e.ctrlKey && !ctrlHeld && e.cancelable) e.preventDefault(); }, { capture: true, passive: false });
 }
 function fitLens() {
 var c = IV.gfx && IV.gfx.camera;
