@@ -26722,7 +26722,7 @@ var HOLD_EPS = 0.003;
 var SEAT = 0.25;
 var SLACK = 1.5;
 var cam = gfx.cam = {};
-cam.limits = { distMin: 18, distMax: 140, tiltMin: 22 * DEG, tiltMax: 84 * DEG };
+cam.limits = { distMin: 11, distMax: 140, tiltMin: 22 * DEG, tiltMax: 84 * DEG };
 cam.free = false;
 cam.autoTilt = true;
 cam.auto = true;
@@ -29405,6 +29405,7 @@ rec.model = model; rec.modelId = modelId;
 rec.batch = batchFor(modelId, model, !st);
 rec.r = model.radius; rec.h = model.height;
 rec.seed = ent.id * 0.37;
+rec.born = -1; rec.pop = -1; rec.wasDone = st && ent.progress >= 1;
 rec.kick = RECOIL[modelId];
 if (rec.kick === undefined) {
 var w = def.weapons && def.weapons[0] && IV.data.weapons.has(def.weapons[0]) ? IV.data.weapons.get(def.weapons[0]) : null;
@@ -29481,6 +29482,7 @@ rec.hp = hp;
 var frac = hp / (e.maxHp * expected);
 rec.dmg = frac >= 0.62 ? 0 : (frac <= 0.15 ? 1 : (0.62 - frac) / 0.47);
 }
+function reducedAnim() { return !!(IV.settings && IV.settings.reducedFx); }
 function recoilDecay(rec) {
 var k = frameDt * rec.rate; if (k > 1) k = 1;
 if (rec.rc1 > 0) { rec.rc1 -= rec.rc1 * k; if (rec.rc1 < 0.002) rec.rc1 = 0; }
@@ -29515,6 +29517,8 @@ if (lit !== rec.lit) { rec.lit = lit; rec.full = true; }
 if (s.owner !== rec.owner) { rec.owner = s.owner; rec.col = colorOf(s.owner); rec.color = colorIndex(s.owner); }
 rec.foreign = !spectator && s.team !== team;
 wear(rec, s, done ? 1 : 0.1 + 0.9 * s.progress);
+if (done && !rec.wasDone && !selling && time > 1.5 && !reducedAnim()) rec.pop = time;
+rec.wasDone = done;
 rec.build = build;
 if (lit && b.timed && dt > 0) {
 var rate = 1;
@@ -29530,13 +29534,17 @@ function placeStructure(rec) {
 rec.onScreen = recInView(rec, 2);
 if (!rec.onScreen) { recoilDecay(rec); return; }
 var b = rec.batch, slot = b.take(), p, n = b.model.parts.length;
+var popK = rec.pop >= 0 ? (time - rec.pop) / 0.5 : 1;
+if (rec.pop >= 0) { rec.full = true; if (popK >= 1) rec.pop = -1; }
 var full = rec.full || rec.slot !== slot || rec.slotAt !== packNo - 1 || rec.slotBatch !== b;
 var moved = rec.t !== rec.tDrawn || rec.turret !== rec.turretDrawn || rec.rc1 > 0 || rec.rc2 > 0 || rec.rcDrawn;
 rec.slot = slot; rec.slotAt = packNo; rec.slotBatch = b;
 if (full || moved) {
 POSE.x = rec.x; POSE.y = rec.y; POSE.z = rec.z; POSE.dir = (rec.ent.face | 0) * (Math.PI / 2); POSE.turret = rec.turret; POSE.time = rec.t;
 POSE.tiltX = 0; POSE.tiltZ = 0;
+if (popK < 1) POSE.scale = 1 + 0.085 * Math.sin(popK * Math.PI * 2.5) * (1 - popK) * (1 - popK);
 var mats = gfx.poseModel(b.model, POSE, b.mats);
+POSE.scale = 1;
 applyRecoil(rec, b, mats);
 if (full) { for (p = 0; p < n; p++) b.put(slot, p, b.hidden[p] && !rec.lit ? ZERO : mats[p]); }
 else { for (var a = 0; a < b.anim.length; a++) { p = b.anim[a]; b.put(slot, p, b.hidden[p] && !rec.lit ? ZERO : mats[p]); } }
@@ -29580,6 +29588,7 @@ fading = rec.shown && u.cloaked && rec.cloak < 0.97 && sim.cellVisible(team, Mat
 if (!fading) { rec.shown = false; return; }
 }
 if (!rec.shown) {
+if (!rec.seen) { rec.seen = true; if (friendly && !spectator && time > 1.5 && !reducedAnim()) rec.born = time; }
 rec.shown = true; rec.fresh = true;
 rec.cloak = u.cloaked && !friendly ? 1 : (u.cloaked ? OWN_CLOAK : 0);
 rec.hp = u.hp; rec.flash = 0; rec.lost = 0; rec.flashF = 0;
@@ -29657,8 +29666,18 @@ rec.slot = slot; rec.slotAt = packNo; rec.slotBatch = b;
 POSE.x = rec.x; POSE.y = rec.y; POSE.z = rec.z; POSE.dir = rec.dir; POSE.turret = rec.turret;
 POSE.time = time + rec.seed;
 POSE.tiltX = rec.tiltX; POSE.tiltZ = rec.tiltZ;
+if (rec.flash > 0.02 && !reducedAnim()) {
+var jolt = rec.flash * (rec.mv === FOOT ? 0.07 : 0.11);
+POSE.tiltX += jolt * Math.sin(time * 47 + rec.seed * 9); POSE.tiltZ += jolt * Math.cos(time * 41 + rec.seed * 5);
+}
+if (rec.born >= 0) {
+var age = (time - rec.born) / 0.42;
+if (age >= 1) rec.born = -1;
+else { var ob = age - 1; POSE.scale = 1 + 2.4 * ob * ob * ob + 1.4 * ob * ob; if (POSE.scale < 0.05) POSE.scale = 0.05; }
+}
 if (b.iLegL >= 0 && rec.rc1 > 0) { POSE.x -= Math.cos(rec.dir) * rec.rc1; POSE.z -= Math.sin(rec.dir) * rec.rc1; }
 var mats = gfx.poseModel(b.model, POSE, b.mats);
+POSE.scale = 1;
 applyRecoil(rec, b, mats);
 if (b.iLegL >= 0) {
 var a = STRIDE * rec.amp * Math.sin(rec.phase);
