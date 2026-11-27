@@ -41,6 +41,20 @@ h2{font:600 27px/1.3 var(--serif);margin:56px 0 6px;letter-spacing:.02em}
 h2 small{display:block;font:600 13px/1 var(--sans);color:var(--rust);letter-spacing:.14em;margin-bottom:10px}
 .lead{color:var(--soft);margin:0 0 20px;font-size:16px}
 
+.map{margin:0 0 26px}
+.map svg{display:block;width:100%;height:auto;background:var(--card);border:1px solid var(--line);border-radius:14px}
+.map .sea{fill:#dfe8e6}
+.map .border{fill:none;stroke:#c3c9bd;stroke-width:1.5;stroke-dasharray:5 5}
+.map .region{font:500 19px var(--sans);fill:#a9b0a5;letter-spacing:.3em}
+.map line{stroke-width:3.5;stroke-linecap:round}
+.map .out{stroke:var(--rust)}
+.map .back{stroke:var(--ink);stroke-dasharray:2 8}
+.map .dot{fill:var(--ink);stroke:var(--card);stroke-width:3}
+.map .dot.home{fill:var(--rust)}
+.map .place{font:600 25px var(--sans);fill:var(--ink);paint-order:stroke;stroke:var(--card);stroke-width:6px;stroke-linejoin:round}
+.map figcaption{margin-top:8px;font-size:13px;color:var(--soft)}
+.key{display:inline-block;width:22px;height:0;margin:0 6px 4px 0;vertical-align:middle;border-top:3px solid var(--rust)}
+.key.back{margin-left:14px;border-top:3px dotted var(--ink)}
 .route{list-style:none;margin:0;padding:0}
 .route li{position:relative;display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding-left:32px}
 .route li::before{content:"";position:absolute;left:4px;top:.62em;width:11px;height:11px;border-radius:50%;background:var(--ink)}
@@ -99,6 +113,7 @@ footer{margin:60px 0 44px;padding-top:16px;border-top:1px solid var(--line);colo
 <div class="wrap">
 <h2 id="route"><small>01</small>路线</h2>
 <p class="lead">每一站后面是住几晚，两站之间是开车时间，不含吃饭和休息。</p>
+<figure class="map"><svg viewBox="0 0 780 506" role="img" aria-label="路线示意图：从旧金山出发，经 Yosemite、Bakersfield、死亡谷、拉斯维加斯到 Sedona，再经温泉、Fresno、半月湾回到旧金山"><defs><marker id="arr-out" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#a65a34"/></marker><marker id="arr-back" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#22382f"/></marker></defs><polygon class="sea" points="86.1,0.0 107.5,64.4 133.2,82.8 134.3,110.4 158.4,161.0 166.5,193.2 166.5,220.8 201.3,280.6 222.2,306.4 234.0,379.0 243.1,391.0 284.4,395.6 311.2,418.6 332.6,432.4 354.1,455.4 380.9,469.2 407.7,506.0 0,506 0,0"/><polyline class="border" points="289.8,0.0 556.2,340.4 583.0,408.5 561.5,469.2 553.5,506.0"/><polyline class="border" points="556.2,340.4 550.3,239.2 587.2,230.0 587.2,156.4 587.2,0.0"/><polyline class="border" points="587.2,156.4 772.2,156.4"/><text class="region" x="250" y="420" text-anchor="middle">加利福尼亚</text><text class="region" x="430" y="100" text-anchor="middle">内华达</text><text class="region" x="640" y="458" text-anchor="middle">亚利桑那</text><text class="region" x="70" y="300" text-anchor="middle">太平洋</text><line class="out" x1="150.6" y1="86.4" x2="263.1" y2="93.7" marker-end="url(#arr-out)"/><line class="out" x1="282.4" y1="106.6" x2="317.6" y2="289.7" marker-end="url(#arr-out)"/><line class="out" x1="329.9" y1="298.5" x2="423.3" y2="217.3" marker-end="url(#arr-out)"/><line class="out" x1="447.6" y1="209.4" x2="512.5" y2="228.1" marker-end="url(#arr-out)"/><line class="out" x1="538.8" y1="239.4" x2="695.8" y2="343.0" marker-end="url(#arr-out)"/><line class="back" x1="698.6" y1="356.2" x2="472.0" y2="430.8" marker-end="url(#arr-back)"/><line class="back" x1="448.6" y1="426.6" x2="270.6" y2="193.8" marker-end="url(#arr-back)"/><line class="back" x1="249.7" y1="174.6" x2="153.0" y2="122.2" marker-end="url(#arr-back)"/><line class="back" x1="138.3" y1="104.1" x2="138.4" y2="97.6"/><circle class="dot home" cx="138.6" cy="85.6" r="9"/><text class="place" x="138.6" y="69.6" text-anchor="middle">旧金山</text><circle class="dot" cx="280.1" cy="94.8" r="7"/><text class="place" x="280.1" y="78.8" text-anchor="middle">Yosemite</text><circle class="dot" cx="320.8" cy="306.4" r="7"/><text class="place" x="305.8" y="314.4" text-anchor="end">Bakersfield</text><circle class="dot" cx="436.1" cy="206.1" r="7"/><text class="place" x="436.1" y="190.1" text-anchor="middle">死亡谷</text><circle class="dot" cx="528.8" cy="232.8" r="7"/><text class="place" x="536.8" y="216.8" text-anchor="start">拉斯维加斯</text><circle class="dot" cx="710.0" cy="352.4" r="7"/><text class="place" x="724.0" y="390.4" text-anchor="middle">Sedona</text><circle class="dot" cx="455.9" cy="436.1" r="7"/><text class="place" x="455.9" y="470.1" text-anchor="middle">温泉</text><circle class="dot" cx="260.3" cy="180.3" r="7"/><text class="place" x="248.3" y="212.3" text-anchor="end">Fresno</text><circle class="dot" cx="138.1" cy="114.1" r="7"/><text class="place" x="124.1" y="123.1" text-anchor="end">半月湾</text></svg><figcaption><span class="key out"></span>去程<span class="key back"></span>回程 · 示意图，不按精确比例</figcaption></figure>
 <ol class="route">
 <li><b>旧金山</b><span>1/28 出发</span></li>
 <li class="leg">4–5 小时</li>
