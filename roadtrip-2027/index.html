@@ -4,188 +4,183 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive">
-<meta property="og:title" content="西南自驾行程 · 2027年1月–2月">
+<meta property="og:title" content="和爸妈的西南自驾 · 2027">
 <meta property="og:description" content="1月28日出发，2月13日到家。每天去哪、住哪、开多久。">
-<title>西南自驾行程 · 2027</title>
+<title>和爸妈的西南自驾 · 2027</title>
 <style>
-:root{--ink:#1f2a26;--soft:#5d6964;--line:#dfe3dc;--bg:#faf9f5;--card:#fff;--accent:#9a5a35;--ok:#2f6b4f;--todo:#9a5a35}
+:root{--ink:#22382f;--soft:#6a756f;--line:#dcdfd5;--bg:#f6f3ec;--card:#fffdf8;--rust:#a65a34;--rust-bg:#f6e9df;--ok:#2d6a4f;--ok-bg:#e4efe7;
+--serif:"Songti SC","Noto Serif SC","Source Han Serif SC","Noto Serif CJK SC","STSong",Georgia,serif;
+--sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif}
 *{box-sizing:border-box}
 html{scroll-behavior:smooth;scroll-padding-top:64px;color-scheme:light}
-body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.7 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;-webkit-text-size-adjust:100%}
-.wrap{max-width:760px;margin:0 auto;padding:0 20px}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.75 var(--sans);-webkit-text-size-adjust:100%}
 a{color:inherit}
-nav{position:sticky;top:0;z-index:5;background:rgba(250,249,245,.96);border-bottom:1px solid var(--line)}
-nav .wrap{display:flex;gap:22px;height:52px;align-items:center;font-size:16px;overflow-x:auto;white-space:nowrap}
+img{display:block;width:100%}
+.wrap{max-width:780px;margin:0 auto;padding:0 20px}
+
+.hero{position:relative;max-width:1100px;margin:0 auto;background:#3b3a36}
+.hero img{height:62vh;min-height:360px;max-height:560px;object-fit:cover}
+.hero::after{content:"";position:absolute;inset:auto 0 0 0;height:62%;background:linear-gradient(to top,rgba(18,24,20,.78),rgba(18,24,20,0))}
+.hero-text{position:absolute;left:0;right:0;bottom:0;z-index:1;padding:0 24px 26px;color:#fff}
+.hero-text .wrap{padding:0}
+.hero h1{font:600 38px/1.25 var(--serif);margin:0 0 10px;letter-spacing:.02em}
+.hero p{margin:0;font-size:16px;opacity:.92}
+.credit{position:absolute;right:10px;top:10px;z-index:1;font-size:11px;color:rgba(255,255,255,.75)}
+
+.stats{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--line)}
+.stats div{padding:20px 0 18px;text-align:center}
+.stats div+div{border-left:1px solid var(--line)}
+.stats b{display:block;font:600 30px/1.1 var(--serif)}
+.stats span{font-size:14px;color:var(--soft)}
+
+nav{position:sticky;top:0;z-index:5;background:rgba(246,243,236,.96);border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;gap:24px;height:50px;align-items:center;font-size:15px;overflow-x:auto;white-space:nowrap}
 nav a{text-decoration:none;color:var(--soft)}
-header{padding:36px 0 8px}
-h1{font-size:30px;line-height:1.3;margin:0 0 8px}
-header p{margin:0;color:var(--soft)}
-h2{font-size:22px;margin:48px 0 14px;padding-top:4px}
-h3{font-size:18px;margin:0}
-.lead{color:var(--soft);margin:-6px 0 16px}
 
-/* 路线 */
+h2{font:600 27px/1.3 var(--serif);margin:56px 0 6px;letter-spacing:.02em}
+h2 small{display:block;font:600 13px/1 var(--sans);color:var(--rust);letter-spacing:.14em;margin-bottom:10px}
+.lead{color:var(--soft);margin:0 0 20px;font-size:16px}
+
 .route{list-style:none;margin:0;padding:0}
-.route li{position:relative;padding:0 0 0 30px}
-.route li::before{content:"";position:absolute;left:5px;top:10px;width:11px;height:11px;border-radius:50%;background:var(--ink)}
-.route li.leg{padding:6px 0 6px 30px;color:var(--soft);font-size:15px}
-.route li.leg::before{left:10px;top:0;bottom:0;width:1px;height:auto;border-radius:0;background:var(--line)}
-.route b{font-weight:600}
-.route span{color:var(--soft);font-size:15px;margin-left:8px}
+.route li{position:relative;display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding-left:32px}
+.route li::before{content:"";position:absolute;left:4px;top:.62em;width:11px;height:11px;border-radius:50%;background:var(--ink)}
+.route b{font:600 20px/1.5 var(--serif)}
+.route span{font-size:15px;color:var(--soft);text-align:right}
+.route li.leg{display:block;padding:9px 0 9px 32px;font-size:14px;color:var(--rust)}
+.route li.leg::before{left:9px;top:0;bottom:0;width:0;height:auto;border-radius:0;background:none;border-left:1.5px dashed #b9c0b5}
 
-/* 每天 */
-.stop{margin:30px 0 0;padding:14px 16px;background:var(--card);border:1px solid var(--line);border-radius:10px}
-.stop-head{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;justify-content:space-between;padding-bottom:10px;border-bottom:1px solid var(--line)}
-.stop-head small{color:var(--soft);font-size:15px}
-.day{display:grid;grid-template-columns:74px 1fr;gap:0 12px;padding:14px 0;border-bottom:1px solid var(--line)}
-.day:last-child{border-bottom:0;padding-bottom:2px}
-.date{font-weight:600;font-variant-numeric:tabular-nums}
-.date small{display:block;font-weight:400;color:var(--soft);font-size:14px}
-.day h4{font-size:17px;margin:0 0 4px}
-.day ul{margin:0;padding-left:1.1em}
-.day li{margin:2px 0}
-.drive{display:inline-block;margin:0 0 6px;padding:1px 9px;border:1px solid var(--line);border-radius:999px;font-size:14px;color:var(--accent)}
-.drive a{margin-left:6px;color:var(--soft)}
+.stop{margin:26px 0 0;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.stop figure{margin:0;position:relative;background:#e9e7df}
+.stop figure img{aspect-ratio:16/9;object-fit:cover}
+.stop figcaption{position:absolute;right:8px;bottom:6px;font-size:11px;color:rgba(255,255,255,.88);text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.stop-body{padding:18px 18px 6px}
+.stop h3{font:600 23px/1.3 var(--serif);margin:0}
+.stop-meta{margin:4px 0 0;padding-bottom:14px;border-bottom:1px solid var(--line);font-size:15px;color:var(--soft)}
+.day{display:grid;grid-template-columns:62px 1fr;gap:0 14px;padding:16px 0;border-bottom:1px solid var(--line)}
+.day:last-child{border-bottom:0}
+.date{font:600 19px/1.4 var(--serif);font-variant-numeric:tabular-nums}
+.date small{display:block;font:400 13px/1.4 var(--sans);color:var(--soft)}
+.day h4{font-size:17px;line-height:1.5;margin:0 0 4px}
+.day ul{margin:0;padding-left:1.15em}
+.day li{margin:3px 0}
+.day li::marker{color:#a9b1a6}
+.drive{display:inline-flex;gap:8px;align-items:center;margin:1px 0 8px;padding:2px 11px;border-radius:999px;background:var(--rust-bg);color:var(--rust);font-size:14px}
+.drive a{color:var(--rust)}
 
-/* 表格 */
-table{width:100%;border-collapse:collapse;font-size:16px}
-th,td{text-align:left;padding:10px 8px 10px 0;border-bottom:1px solid var(--line);vertical-align:top}
-th{font-weight:600;color:var(--soft);font-size:14px}
-td small{display:block;color:var(--soft);font-size:14px}
-.ok{color:var(--ok);white-space:nowrap}
-.todo{color:var(--todo);white-space:nowrap}
-.scroll{overflow-x:auto}
+.stays{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.stays li{display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding:14px 0;border-bottom:1px solid var(--line)}
+.stays b{font-weight:600}
+.stays small{display:block;color:var(--soft);font-size:14px}
+.chip{align-self:start;padding:2px 10px;border-radius:999px;font-size:13px;white-space:nowrap}
+.chip.ok{background:var(--ok-bg);color:var(--ok)}
+.chip.todo{background:var(--rust-bg);color:var(--rust)}
 
-.photo{margin:14px 0 2px}
-.photo img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:8px;background:#eceee8}
-.photo figcaption{margin-top:5px;font-size:13px;color:var(--soft)}
-.list{margin:0;padding-left:1.2em}
-.list li{margin:6px 0}
-details{margin-top:14px;border:1px solid var(--line);border-radius:10px;background:var(--card);padding:0 16px}
-summary{padding:13px 0;cursor:pointer;font-weight:600}
+details{margin-top:18px;border:1px solid var(--line);border-radius:14px;background:var(--card);padding:0 18px}
+summary{padding:14px 0;cursor:pointer;font-weight:600}
 details[open] summary{border-bottom:1px solid var(--line)}
-footer{margin:56px 0 40px;padding-top:16px;border-top:1px solid var(--line);color:var(--soft);font-size:14px}
-@media(min-width:700px){body{font-size:17px}h1{font-size:36px}.day{grid-template-columns:96px 1fr}}
-@media print{nav{display:none}.stop{break-inside:avoid}body{background:#fff;font-size:12pt}}
+table{width:100%;border-collapse:collapse;font-size:15px}
+td{padding:10px 8px 10px 0;border-bottom:1px solid var(--line);vertical-align:top}
+td:nth-child(2){white-space:nowrap}
+td small{display:block;color:var(--soft);font-size:13px}
+
+.list{margin:0;padding-left:1.2em}
+.list li{margin:8px 0}
+.list li::marker{color:var(--rust)}
+footer{margin:60px 0 44px;padding-top:16px;border-top:1px solid var(--line);color:var(--soft);font-size:13px}
+
+@media(min-width:720px){.hero h1{font-size:50px}.hero-text{padding-bottom:36px}.day{grid-template-columns:84px 1fr}.stop-body{padding:22px 26px 8px}h2{font-size:32px}}
+@media print{nav,.credit{display:none}.stop{break-inside:avoid}body{background:#fff}}
 </style>
 </head>
 <body>
+<header class="hero"><img src="https://www.nps.gov/common/uploads/cropped_image/primary/91061898-0F2F-B755-A74292D70AE791F7.jpg?width=1200&amp;quality=85&amp;mode=crop" alt="死亡谷 Artists Palette 的彩色山丘" fetchpriority="high" onerror="this.parentNode.style.display='none'"><span class="credit">死亡谷 · 照片：美国国家公园管理局</span><div class="hero-text"><div class="wrap"><h1>和爸妈的<br>西南自驾</h1><p>2027年1月28日出发，2月13日到家</p></div></div></header>
+<div class="wrap"><div class="stats"><div><b>16</b><span>晚在路上</span></div><div><b>7</b><span>处住宿</span></div><div><b>3</b><span>个人，一辆车</span></div></div></div>
 <nav><div class="wrap"><a href="#route">路线</a><a href="#days">每天安排</a><a href="#stay">住宿</a><a href="#pack">要带的</a><a href="#notes">注意</a></div></nav>
 <div class="wrap">
-
-<header>
-<h1>西南自驾行程</h1>
-<p>2027年1月26日 – 2月15日 · 三个人，一辆车</p>
-<p>1月28日出发，2月13日到家，路上16晚。</p>
-</header>
-
-<h2 id="route">路线</h2>
-<p class="lead">每一站后面写的是住几晚，两站之间是开车时间，不含吃饭和休息。</p>
+<h2 id="route"><small>01</small>路线</h2>
+<p class="lead">每一站后面是住几晚，两站之间是开车时间，不含吃饭和休息。</p>
 <ol class="route">
 <li><b>旧金山</b><span>1/28 出发</span></li>
 <li class="leg">4–5 小时</li>
 <li><b>Yosemite</b><span>3 晚</span></li>
 <li class="leg">4–4.5 小时</li>
-<li><b>Bakersfield</b><span>1 晚，只过夜</span></li>
+<li><b>Bakersfield</b><span>1 晚 · 只过夜</span></li>
 <li class="leg">4–5 小时</li>
 <li><b>死亡谷</b><span>2 晚</span></li>
 <li class="leg">2.5–3 小时</li>
 <li><b>拉斯维加斯</b><span>3 晚</span></li>
 <li class="leg">4.5–5 小时</li>
 <li><b>Sedona</b><span>3 晚</span></li>
-<li class="leg">5.5–6.5 小时，全程最长的一段</li>
-<li><b>温泉（Desert Hot Springs）</b><span>3 晚</span></li>
+<li class="leg">5.5–6.5 小时 · 全程最长的一段</li>
+<li><b>温泉</b><span>3 晚</span></li>
 <li class="leg">约 5 小时</li>
-<li><b>Fresno</b><span>1 晚，只过夜</span></li>
-<li class="leg">约 3 小时到 Half Moon Bay，再 40 分钟到家</li>
+<li><b>Fresno</b><span>1 晚 · 只过夜</span></li>
+<li class="leg">约 3 小时到 Half Moon Bay，再 40 分钟</li>
 <li><b>旧金山</b><span>2/13 到家</span></li>
 </ol>
-
-<h2 id="days">每天安排</h2>
+<h2 id="days"><small>02</small>每天安排</h2>
 <p class="lead">时间是计划，不用卡点。累了、天气不好，就少去一个地方。</p>
-
-<section class="stop">
-<div class="stop-head"><h3>出发前</h3><small>1/26 – 1/27 · 在家</small></div>
+<section class="stop"><div class="stop-body"><h3>出发前</h3><p class="stop-meta">1/26 – 1/27 · 在家</p>
 <div class="day"><div class="date">1/26<small>周二</small></div><div><h4>到旧金山</h4><ul><li>上午 09:35 到旧金山机场，接机回家。</li><li>当天只休息，倒时差。</li></ul></div></div>
 <div class="day"><div class="date">1/27<small>周三</small></div><div><h4>在家休息</h4><ul><li>睡到自然醒，附近走走。</li><li>收拾路上的行李，早点睡。</li></ul></div></div>
-</section>
-
-<section class="stop">
-<div class="stop-head"><h3>Yosemite</h3><small>1/28 – 1/31 · 住 Yosemite View Lodge</small></div><figure class="photo"><img src="https://www.nps.gov/common/uploads/cropped_image/primary/0CFC2E25-B7B1-A12D-8621A2F88303D8EF.jpg?width=1000&amp;quality=85&amp;mode=crop" alt="Yosemite 山谷的 Tunnel View 观景点" loading="lazy" decoding="async" onerror="this.parentNode.style.display='none'"><figcaption>Tunnel View，1/29 去 · 照片：美国国家公园管理局</figcaption></figure>
-<div class="day"><div class="date">1/28<small>周四</small></div><div><span class="drive">开车 4–5 小时<a href="https://www.google.com/maps/dir/?api=1&origin=San+Francisco+CA&destination=Yosemite+View+Lodge&travelmode=driving&waypoints=Merced+CA%7CMariposa+CA" target="_blank" rel="noopener">导航</a></span><h4>旧金山 → Yosemite</h4><ul><li>09:00 出发，路上吃午饭。</li><li>下午到酒店，入住休息。</li></ul></div></div>
+</div></section>
+<section class="stop"><figure><img src="https://www.nps.gov/common/uploads/cropped_image/primary/0CFC2E25-B7B1-A12D-8621A2F88303D8EF.jpg?width=1200&amp;quality=85&amp;mode=crop" alt="Yosemite 山谷的 Tunnel View 观景点" loading="lazy" onerror="this.parentNode.style.display='none'"><figcaption>Tunnel View · 照片：美国国家公园管理局</figcaption></figure><div class="stop-body"><h3>Yosemite</h3><p class="stop-meta">1/28 – 1/31 · 住 Yosemite View Lodge</p>
+<div class="day"><div class="date">1/28<small>周四</small></div><div><span class="drive">开车 4–5 小时<a href="https://www.google.com/maps/dir/?api=1&amp;travelmode=driving&amp;origin=San+Francisco+CA&amp;destination=Yosemite+View+Lodge&amp;waypoints=Merced+CA%7CMariposa+CA" target="_blank" rel="noopener">导航</a></span><h4>旧金山 → Yosemite</h4><ul><li>09:00 出发，路上吃午饭。</li><li>下午到酒店，入住休息。</li></ul></div></div>
 <div class="day"><div class="date">1/29<small>周五</small></div><div><h4>Yosemite 山谷</h4><ul><li>上午看 Tunnel View 等路边观景点，下车就能看。</li><li>午饭后在瀑布和河边短走；路面结冰就不走。</li><li>下午三四点回酒店。</li></ul></div></div>
 <div class="day"><div class="date">1/30<small>周六</small></div><div><h4>滑雪半天</h4><ul><li>07:30 出发去 Badger Pass 雪场，现场租雪具，滑一上午。</li><li>爸妈可以在雪场休息区看雪，或留在酒店。</li><li>午饭后回酒店休息。</li></ul></div></div>
-</section>
-
-<section class="stop">
-<div class="stop-head"><h3>Bakersfield</h3><small>1/31 · 住 SpringHill Suites · 只过夜</small></div>
-<div class="day"><div class="date">1/31<small>周日</small></div><div><span class="drive">开车 4–4.5 小时<a href="https://www.google.com/maps/dir/?api=1&origin=Yosemite+View+Lodge&destination=SpringHill+Suites+Bakersfield&travelmode=driving&waypoints=Merced+CA" target="_blank" rel="noopener">导航</a></span><h4>Yosemite → Bakersfield</h4><ul><li>10:00 退房出发，下午到。</li><li>去死亡谷要绕山，这一晚是为了把路拆成两天。</li></ul></div></div>
-</section>
-
-<section class="stop">
-<div class="stop-head"><h3>死亡谷</h3><small>2/1 – 2/3 · 住 The Ranch at Death Valley</small></div><figure class="photo"><img src="https://www.nps.gov/common/uploads/cropped_image/primary/91061898-0F2F-B755-A74292D70AE791F7.jpg?width=1000&amp;quality=85&amp;mode=crop" alt="死亡谷 Artists Palette 的彩色山丘" loading="lazy" decoding="async" onerror="this.parentNode.style.display='none'"><figcaption>Artists Drive 的彩色山丘，2/2 去 · 照片：美国国家公园管理局</figcaption></figure>
-<div class="day"><div class="date">2/1<small>周一</small></div><div><span class="drive">开车 4–5 小时<a href="https://www.google.com/maps/dir/?api=1&origin=SpringHill+Suites+Bakersfield&destination=The+Ranch+at+Death+Valley&travelmode=driving&waypoints=Mojave+CA%7COlancha+CA%7CMesquite+Flat+Sand+Dunes" target="_blank" rel="noopener">导航</a></span><h4>Bakersfield → 死亡谷</h4><ul><li>09:00 出发，在 Mojave 加满油。</li><li>进公园后在沙丘停半小时，就在路边。</li><li>约 16:00 到酒店。晚上天晴可以看星星。</li></ul></div></div>
+</div></section>
+<section class="stop"><div class="stop-body"><h3>Bakersfield</h3><p class="stop-meta">1/31 · 住 SpringHill Suites · 只过夜</p>
+<div class="day"><div class="date">1/31<small>周日</small></div><div><span class="drive">开车 4–4.5 小时<a href="https://www.google.com/maps/dir/?api=1&amp;travelmode=driving&amp;origin=Yosemite+View+Lodge&amp;destination=SpringHill+Suites+Bakersfield&amp;waypoints=Merced+CA" target="_blank" rel="noopener">导航</a></span><h4>Yosemite → Bakersfield</h4><ul><li>10:00 退房出发，下午到。</li><li>去死亡谷要绕山，这一晚是为了把路拆成两天。</li></ul></div></div>
+</div></section>
+<section class="stop"><figure><img src="https://www.nps.gov/common/uploads/cropped_image/primary/9400A45F-99FA-387D-85E5EE5E8A1B36CF.jpg?width=1200&amp;quality=85&amp;mode=crop" alt="死亡谷 Zabriskie 观景台的金色山丘" loading="lazy" onerror="this.parentNode.style.display='none'"><figcaption>Zabriskie 观景台 · 照片：美国国家公园管理局</figcaption></figure><div class="stop-body"><h3>死亡谷</h3><p class="stop-meta">2/1 – 2/3 · 住 The Ranch at Death Valley</p>
+<div class="day"><div class="date">2/1<small>周一</small></div><div><span class="drive">开车 4–5 小时<a href="https://www.google.com/maps/dir/?api=1&amp;travelmode=driving&amp;origin=SpringHill+Suites+Bakersfield&amp;destination=The+Ranch+at+Death+Valley&amp;waypoints=Mojave+CA%7COlancha+CA%7CMesquite+Flat+Sand+Dunes" target="_blank" rel="noopener">导航</a></span><h4>Bakersfield → 死亡谷</h4><ul><li>09:00 出发，在 Mojave 加满油。</li><li>进公园后在沙丘停半小时，就在路边。</li><li>约 16:00 到酒店。晚上天晴可以看星星。</li></ul></div></div>
 <div class="day"><div class="date">2/2<small>周二</small></div><div><h4>死亡谷一整天</h4><ul><li>上午：Badwater 盐地，再开车看 Artists Drive 的彩色山丘。</li><li>中午回房间午休。</li><li>傍晚：Zabriskie 观景台，离酒店 10 分钟。</li></ul></div></div>
-</section>
-
-<section class="stop">
-<div class="stop-head"><h3>拉斯维加斯</h3><small>2/3 – 2/6 · 住 Rio</small></div><figure class="photo"><img src="https://www.riolasvegas.com/_next/image?url=https%3A%2F%2Friolv.wpengine.com%2Fwp-content%2Fuploads%2F2026%2F02%2FRio-Nght-Exterior-scaled.jpg&amp;w=1920&amp;q=75" alt="拉斯维加斯夜景，中间蓝紫色的楼是 Rio 酒店" loading="lazy" decoding="async" onerror="this.parentNode.style.display='none'"><figcaption>住的 Rio 酒店，中间蓝紫色那栋 · 照片：Rio 官网</figcaption></figure>
-<div class="day"><div class="date">2/3<small>周三</small></div><div><span class="drive">开车 2.5–3 小时<a href="https://www.google.com/maps/dir/?api=1&origin=The+Ranch+at+Death+Valley&destination=Rio+Hotel+Casino+Las+Vegas&travelmode=driving&waypoints=Dantes+View+Death+Valley%7CPahrump+NV" target="_blank" rel="noopener">导航</a></span><h4>死亡谷 → 拉斯维加斯</h4><ul><li>09:00 退房。顺路上 Dante's View 看谷底全景，多花约一小时，可以不去。</li><li>下午到酒店，午睡，晚上吃顿好的。</li></ul></div></div>
+</div></section>
+<section class="stop"><figure><img src="https://www.riolasvegas.com/_next/image?url=https%3A%2F%2Friolv.wpengine.com%2Fwp-content%2Fuploads%2F2026%2F02%2FRio-Nght-Exterior-scaled.jpg&amp;w=1920&amp;q=75" alt="拉斯维加斯夜景，中间蓝紫色的楼是 Rio 酒店" loading="lazy" onerror="this.parentNode.style.display='none'"><figcaption>中间蓝紫色那栋是住的 Rio · 照片：Rio 官网</figcaption></figure><div class="stop-body"><h3>拉斯维加斯</h3><p class="stop-meta">2/3 – 2/6 · 住 Rio</p>
+<div class="day"><div class="date">2/3<small>周三</small></div><div><span class="drive">开车 2.5–3 小时<a href="https://www.google.com/maps/dir/?api=1&amp;travelmode=driving&amp;origin=The+Ranch+at+Death+Valley&amp;destination=Rio+Hotel+Casino+Las+Vegas&amp;waypoints=Dantes+View+Death+Valley%7CPahrump+NV" target="_blank" rel="noopener">导航</a></span><h4>死亡谷 → 拉斯维加斯</h4><ul><li>09:00 退房。顺路上 Dante&#x27;s View 看谷底全景，多花约一小时，可以不去。</li><li>下午到酒店，午睡，晚上吃顿好的。</li></ul></div></div>
 <div class="day"><div class="date">2/4<small>周四</small></div><div><h4>休息、逛 Outlet</h4><ul><li>睡到自然醒。</li><li>下午去 North Premium Outlets，全程只逛这一次。</li></ul></div></div>
 <div class="day"><div class="date">2/5<small>周五</small></div><div><h4>Valley of Fire 半天</h4><ul><li>09:00 出发，单程 1 小时。红色岩石的公路，观景点都在路边。</li><li>下午两点前后回酒店休息。</li></ul></div></div>
-</section>
-
-<section class="stop">
-<div class="stop-head"><h3>Sedona</h3><small>2/6 – 2/9 · 住 Airbnb 公寓，可以洗衣服</small></div><figure class="photo"><img src="https://www.fs.usda.gov/sites/nfs/files/styles/hero/public/r03/coconino/image/fay-canyon-trail-6.jpg?h=b6a87aec&amp;itok=V0yfnCx0" alt="Sedona 的 Fay Canyon 步道和红岩" loading="lazy" decoding="async" onerror="this.parentNode.style.display='none'"><figcaption>Fay Canyon，2/8 去 · 照片：美国林务局</figcaption></figure>
-<div class="day"><div class="date">2/6<small>周六</small></div><div><span class="drive">开车 4.5–5 小时<a href="https://www.google.com/maps/dir/?api=1&origin=Rio+Hotel+Casino+Las+Vegas&destination=West+Sedona+Arizona&travelmode=driving&waypoints=Kingman+AZ%7CMunds+Park+AZ%7CVillage+of+Oak+Creek+AZ" target="_blank" rel="noopener">导航</a></span><h4>拉斯维加斯 → Sedona</h4><ul><li>09:00 出发。亚利桑那比内华达快 1 小时。</li><li>到了先去超市买菜，晚上洗衣服。</li></ul></div></div>
+</div></section>
+<section class="stop"><figure><img src="https://www.fs.usda.gov/sites/nfs/files/styles/hero/public/r03/coconino/image/fay-canyon-trail-6.jpg?h=b6a87aec&amp;itok=V0yfnCx0" alt="Sedona 的 Fay Canyon 步道和红岩" loading="lazy" onerror="this.parentNode.style.display='none'"><figcaption>Fay Canyon · 照片：美国林务局</figcaption></figure><div class="stop-body"><h3>Sedona</h3><p class="stop-meta">2/6 – 2/9 · 住 Airbnb 公寓，可以洗衣服</p>
+<div class="day"><div class="date">2/6<small>周六</small></div><div><span class="drive">开车 4.5–5 小时<a href="https://www.google.com/maps/dir/?api=1&amp;travelmode=driving&amp;origin=Rio+Hotel+Casino+Las+Vegas&amp;destination=West+Sedona+Arizona&amp;waypoints=Kingman+AZ%7CMunds+Park+AZ%7CVillage+of+Oak+Creek+AZ" target="_blank" rel="noopener">导航</a></span><h4>拉斯维加斯 → Sedona</h4><ul><li>09:00 出发。亚利桑那比内华达快 1 小时。</li><li>到了先去超市买菜，晚上洗衣服。</li></ul></div></div>
 <div class="day"><div class="date">2/7<small>周日</small></div><div><h4>直升机看红岩</h4><ul><li>上午坐直升机，连报到约 2 小时。天气不好就改到第二天。</li><li>下午休息，傍晚可以去 Tlaquepaque 小镇逛逛。</li></ul></div></div>
 <div class="day"><div class="date">2/8<small>周一</small></div><div><h4>Fay Canyon 散步</h4><ul><li>上午走一段平路，走到哪算哪，随时回头。</li><li>下午休息，把衣服洗完。</li></ul></div></div>
-</section>
-
-<section class="stop">
-<div class="stop-head"><h3>温泉</h3><small>2/9 – 2/12 · 住 Miracle Springs Resort</small></div><figure class="photo"><img src="https://www.nps.gov/common/uploads/cropped_image/primary/C7D00A59-C31E-BA17-5D449DCEF35A925D.jpg?width=1000&amp;quality=85&amp;mode=crop" alt="Joshua Tree 国家公园的岩石和约书亚树" loading="lazy" decoding="async" onerror="this.parentNode.style.display='none'"><figcaption>Joshua Tree 国家公园，2/11 去 · 照片：美国国家公园管理局</figcaption></figure>
-<div class="day"><div class="date">2/9<small>周二</small></div><div><span class="drive">开车 5.5–6.5 小时<a href="https://www.google.com/maps/dir/?api=1&origin=West+Sedona+Arizona&destination=Miracle+Springs+Resort+Desert+Hot+Springs&travelmode=driving&waypoints=Phoenix+AZ%7CBlythe+CA" target="_blank" rel="noopener">导航</a></span><h4>Sedona → 温泉</h4><ul><li>09:00 出发，全程最长的一天。加州比亚利桑那慢 1 小时。</li><li>到了吃饭、泡汤、休息。</li></ul></div></div>
+</div></section>
+<section class="stop"><figure><img src="https://www.nps.gov/common/uploads/cropped_image/primary/C7D00A59-C31E-BA17-5D449DCEF35A925D.jpg?width=1200&amp;quality=85&amp;mode=crop" alt="Joshua Tree 国家公园的岩石和约书亚树" loading="lazy" onerror="this.parentNode.style.display='none'"><figcaption>Joshua Tree 国家公园 · 照片：美国国家公园管理局</figcaption></figure><div class="stop-body"><h3>温泉</h3><p class="stop-meta">2/9 – 2/12 · 住 Miracle Springs Resort</p>
+<div class="day"><div class="date">2/9<small>周二</small></div><div><span class="drive">开车 5.5–6.5 小时<a href="https://www.google.com/maps/dir/?api=1&amp;travelmode=driving&amp;origin=West+Sedona+Arizona&amp;destination=Miracle+Springs+Resort+Desert+Hot+Springs&amp;waypoints=Phoenix+AZ%7CBlythe+CA" target="_blank" rel="noopener">导航</a></span><h4>Sedona → 温泉</h4><ul><li>09:00 出发，全程最长的一天。加州比亚利桑那慢 1 小时。</li><li>到了吃饭、泡汤、休息。</li></ul></div></div>
 <div class="day"><div class="date">2/10<small>周三</small></div><div><h4>休息一整天</h4><ul><li>泡汤、午睡，不出门。</li></ul></div></div>
 <div class="day"><div class="date">2/11<small>周四</small></div><div><h4>Joshua Tree</h4><ul><li>上午去 Joshua Tree 国家公园走一小段，来回连游览约 5 小时。</li><li>下午回酒店泡汤。不想去就继续休息。</li></ul></div></div>
-</section>
-
-<section class="stop">
-<div class="stop-head"><h3>回家路上</h3><small>2/12 – 2/13 · 住 Hyatt Place Fresno</small></div>
-<div class="day"><div class="date">2/12<small>周五</small></div><div><span class="drive">开车约 5 小时<a href="https://www.google.com/maps/dir/?api=1&origin=Miracle+Springs+Resort+Desert+Hot+Springs&destination=Hyatt+Place+Fresno&travelmode=driving&waypoints=Bakersfield+CA" target="_blank" rel="noopener">导航</a></span><h4>温泉 → Fresno</h4><ul><li>早上再泡一次，09:30 出发。</li><li>下午到酒店，只过夜。</li></ul></div></div>
-<div class="day"><div class="date">2/13<small>周六</small></div><div><span class="drive">开车约 3 小时 + 40 分钟<a href="https://www.google.com/maps/dir/?api=1&origin=Hyatt+Place+Fresno&destination=San+Francisco+CA&travelmode=driving&waypoints=Gilroy+CA%7CHalf+Moon+Bay+Golf+Links" target="_blank" rel="noopener">导航</a></span><h4>Fresno → Half Moon Bay → 回家</h4><ul><li>08:30 出发，中午到 Half Moon Bay，在港口吃午饭。</li><li>下午三个人一起上一堂高尔夫入门课，约 1 小时，然后在海边走走。</li><li>傍晚到家。</li></ul></div></div>
-</section>
-
-<section class="stop">
-<div class="stop-head"><h3>回国</h3><small>2/14 – 2/15 · 在家</small></div>
+</div></section>
+<section class="stop"><div class="stop-body"><h3>回家路上</h3><p class="stop-meta">2/12 – 2/13 · 住 Hyatt Place Fresno</p>
+<div class="day"><div class="date">2/12<small>周五</small></div><div><span class="drive">开车约 5 小时<a href="https://www.google.com/maps/dir/?api=1&amp;travelmode=driving&amp;origin=Miracle+Springs+Resort+Desert+Hot+Springs&amp;destination=Hyatt+Place+Fresno&amp;waypoints=Bakersfield+CA" target="_blank" rel="noopener">导航</a></span><h4>温泉 → Fresno</h4><ul><li>早上再泡一次，09:30 出发。</li><li>下午到酒店，只过夜。</li></ul></div></div>
+<div class="day"><div class="date">2/13<small>周六</small></div><div><span class="drive">开车约 3 小时 + 40 分钟<a href="https://www.google.com/maps/dir/?api=1&amp;travelmode=driving&amp;origin=Hyatt+Place+Fresno&amp;destination=San+Francisco+CA&amp;waypoints=Gilroy+CA%7CHalf+Moon+Bay+Golf+Links" target="_blank" rel="noopener">导航</a></span><h4>Fresno → Half Moon Bay → 回家</h4><ul><li>08:30 出发，中午到 Half Moon Bay，在港口吃午饭。</li><li>下午三个人一起上一堂高尔夫入门课，约 1 小时，然后在海边走走。</li><li>傍晚到家。</li></ul></div></div>
+</div></section>
+<section class="stop"><div class="stop-body"><h3>回国</h3><p class="stop-meta">2/14 – 2/15 · 在家</p>
 <div class="day"><div class="date">2/14<small>周日</small></div><div><h4>在家休息</h4><ul><li>收拾行李，买要带回去的东西。</li></ul></div></div>
 <div class="day"><div class="date">2/15<small>周一</small></div><div><h4>去机场</h4><ul><li>08:00 从家出发。</li><li>11:45 起飞。</li></ul></div></div>
-</section>
-
-<h2 id="stay">住宿</h2>
-<div class="scroll"><table>
-<tr><th>日期</th><th>住哪</th><th>晚</th><th>预订</th></tr>
-<tr><td>1/28–1/31</td><td>Yosemite View Lodge<small>公园西门外</small></td><td>3</td><td class="ok">已订</td></tr>
-<tr><td>1/31</td><td>SpringHill Suites Bakersfield</td><td>1</td><td class="ok">已订</td></tr>
-<tr><td>2/1–2/3</td><td>The Ranch at Death Valley<small>公园里面</small></td><td>2</td><td class="ok">已订</td></tr>
-<tr><td>2/3–2/6</td><td>Rio Hotel &amp; Casino<small>拉斯维加斯</small></td><td>3</td><td class="ok">已订</td></tr>
-<tr><td>2/6–2/9</td><td>Sedona 的 Airbnb 公寓<small>两间卧室、两个卫生间，有洗衣机</small></td><td>3</td><td class="ok">已订</td></tr>
-<tr><td>2/9–2/12</td><td>Miracle Springs Resort<small>温泉酒店，住客随时可以泡</small></td><td>3</td><td class="todo">还没订</td></tr>
-<tr><td>2/12</td><td>Hyatt Place Fresno</td><td>1</td><td class="ok">已订</td></tr>
-</table></div>
-
+</div></section>
+<h2 id="stay"><small>03</small>住宿</h2>
+<ul class="stays">
+<li><div><b>Yosemite View Lodge</b><small>1/28 – 1/31 · 3 晚 · 公园西门外</small></div><span class="chip ok">已订</span></li>
+<li><div><b>SpringHill Suites Bakersfield</b><small>1/31 · 1 晚</small></div><span class="chip ok">已订</span></li>
+<li><div><b>The Ranch at Death Valley</b><small>2/1 – 2/3 · 2 晚 · 公园里面</small></div><span class="chip ok">已订</span></li>
+<li><div><b>Rio Hotel &amp; Casino</b><small>2/3 – 2/6 · 3 晚 · 拉斯维加斯</small></div><span class="chip ok">已订</span></li>
+<li><div><b>Sedona 的 Airbnb 公寓</b><small>2/6 – 2/9 · 3 晚 · 两间卧室、两个卫生间，有洗衣机</small></div><span class="chip ok">已订</span></li>
+<li><div><b>Miracle Springs Resort</b><small>2/9 – 2/12 · 3 晚 · 温泉酒店，住客随时可以泡</small></div><span class="chip todo">还没订</span></li>
+<li><div><b>Hyatt Place Fresno</b><small>2/12 · 1 晚</small></div><span class="chip ok">已订</span></li>
+</ul>
 <details>
 <summary>费用和待办（订房的人看）</summary>
-<div class="scroll"><table>
-<tr><th>项目</th><th>金额</th><th>说明</th></tr>
-<tr><td>Yosemite View Lodge</td><td>$550</td><td>已付</td></tr>
-<tr><td>SpringHill Suites Bakersfield</td><td>$110</td><td>已付</td></tr>
-<tr><td>The Ranch at Death Valley</td><td>$688</td><td>已付</td></tr>
-<tr><td>Rio</td><td>18,000 分 + $85</td><td>Hyatt 积分</td></tr>
-<tr><td>Sedona Airbnb</td><td>$632</td><td>房东已确认；入住前问洗衣机是不是房内独用</td></tr>
-<tr><td>Miracle Springs Resort</td><td>约 $450</td><td>估算。订两张 Queen、三位成人，选可取消的</td></tr>
-<tr><td>Hyatt Place Fresno</td><td>$175</td><td>已订，Hyatt 会员九折价</td></tr>
-</table></div>
-<p><b>还要订的：</b></p>
+<table>
+<tr><td>Yosemite View Lodge<small>已付</small></td><td>$550</td></tr>
+<tr><td>SpringHill Suites Bakersfield<small>已付</small></td><td>$110</td></tr>
+<tr><td>The Ranch at Death Valley<small>已付</small></td><td>$688</td></tr>
+<tr><td>Rio<small>Hyatt 积分</small></td><td>18,000 分 + $85</td></tr>
+<tr><td>Sedona Airbnb<small>房东已确认；入住前问洗衣机是不是房内独用</small></td><td>$632</td></tr>
+<tr><td>Miracle Springs Resort<small>估算。订两张 Queen、三位成人，选可取消的</small></td><td>约 $450</td></tr>
+<tr><td>Hyatt Place Fresno<small>已订，Hyatt 会员九折价</small></td><td>$175</td></tr>
+</table>
+<p><b>还要订的</b></p>
 <ul class="list">
 <li>Miracle Springs Resort，2/9–2/12。</li>
 <li>Half Moon Bay 高尔夫课，2/13 下午一点左右。问清三人一起的价格、是否提供球杆。</li>
@@ -194,18 +189,16 @@ footer{margin:56px 0 40px;padding-top:16px;border-top:1px solid var(--line);colo
 </ul>
 <p>住宿现金合计约 $2,700；加上吃饭、油费、直升机等，全程约 $8,000。吃饭和油费是估算。</p>
 </details>
-
-<h2 id="pack">要带的</h2>
+<h2 id="pack"><small>04</small>要带的</h2>
 <ul class="list">
-<li><b>保暖：</b>羽绒服或厚外套、保暖内衣、帽子手套。雪山冷，沙漠早晚也冷。</li>
-<li><b>泳衣和拖鞋：</b>泡温泉用，穿泳衣泡。</li>
-<li><b>墨镜、遮阳帽、防晒霜：</b>雪地和沙漠的太阳都很晒。</li>
-<li><b>好走的鞋：</b>运动鞋就行，不需要登山装备。</li>
-<li><b>换洗衣服带够 10 天：</b>到 Sedona（2/6）才能洗衣服。</li>
-<li><b>常用药、保温杯。</b></li>
+<li><b>保暖</b>：羽绒服或厚外套、保暖内衣、帽子手套。雪山冷，沙漠早晚也冷。</li>
+<li><b>泳衣和拖鞋</b>：泡温泉用，穿泳衣泡。</li>
+<li><b>墨镜、遮阳帽、防晒霜</b>：雪地和沙漠的太阳都很晒。</li>
+<li><b>好走的鞋</b>：运动鞋就行，不需要登山装备。</li>
+<li><b>换洗衣服带够 10 天</b>：到 Sedona（2/6）才能洗衣服。</li>
+<li><b>常用药、保温杯</b></li>
 </ul>
-
-<h2 id="notes">注意</h2>
+<h2 id="notes"><small>05</small>注意</h2>
 <ul class="list">
 <li>路面结冰、太陡的地方都不走，改在观景点看。全程没有需要爬山的项目。</li>
 <li>开车的日子只管到达，不另外加景点。每两小时停一次。</li>
@@ -213,7 +206,6 @@ footer{margin:56px 0 40px;padding-top:16px;border-top:1px solid var(--line);colo
 <li>亚利桑那比加州、内华达快 1 小时（2/6 进，2/9 出）。</li>
 <li>雪天进 Yosemite 要带防滑链，车上已备。</li>
 </ul>
-
 <footer>最后更新：2026年11月27日。车程是正常路况下的估计。</footer>
 </div>
 </body>
